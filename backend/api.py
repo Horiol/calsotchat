@@ -31,7 +31,7 @@ class Api():
         """
         Start the Flask web server
         """
-        if self.running:
+        if not self.running:
             self.port = port
             self.running = True
             self.socketio.run(self.app, host="127.0.0.1", port=port)
@@ -40,7 +40,7 @@ class Api():
         """
         Stop the Flask web server
         """
-        if not self.running:
+        if self.running:
             requests.get(
                 f"http://127.0.0.1:{self.port}/shutdown/"
             )
