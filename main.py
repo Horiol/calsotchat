@@ -1,33 +1,41 @@
 import time
 import threading
+import logging
 
 from backend.tor import Tor
 from backend.api import Api
 
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='[%(levelname)-8s] (%(threadName)-10s) (%(filename)s:%(lineno)d) %(message)s',
+)
+
 def main():
-    print("Starting services...")
+    logging.info("Starting services...")
     
     tor_service = Tor()
     route = tor_service.start_service()
-    print(f"Onion service started and listening in {route}")
+    logging.info(f"Onion service started and listening in {route}")
     
     flask_api = Api()
     # Start API service in new thread
-    t = threading.Thread(target=flask_api.start, args=(5000,))
-    t.daemon = True
-    t.start()
-    print("API started")
+    thread = threading.Thread(target=flask_api.start, args=(5000,))
+    thread.daemon = True
+    thread.start()
+    logging.info("API started")
 
     while True:
         try:
             time.sleep(24*60*60) # Wait 24h
         except KeyboardInterrupt:
-            print("Stopping services...")
+            logging.info("Stopping services...")
             flask_api.stop()
-            print("API stopped")
+            logging.debug("API stopped")
             tor_service.stop_service()
-            print("Onion Service stopped")
+            logging.debug("Onion Service stopped")
+            logging.info("Services stopped, bye")
             break
+    thread.join()
 
 if __name__ == "__main__":
     main()

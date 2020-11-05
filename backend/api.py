@@ -1,10 +1,12 @@
 import requests
+from requests.exceptions import ConnectionError
+import logging
 
 from flask import Flask, request
 from flask_socketio import SocketIO
 
 app = Flask(__name__)
-
+socketio = SocketIO(app)
 
 @app.route("/")
 def index():
@@ -19,12 +21,11 @@ class Api():
         self.running = False
         self.port = None
         self.app = app
-        self.socketio = SocketIO()
-        self.socketio.init_app(self.app)
+        self.socketio = socketio
 
-        self._define_routes()
+        self._define_internal_routes()
 
-    def _define_routes(self):
+    def _define_internal_routes(self):
         @self.app.route("/shutdown/")
         def shutdown():
             self.running = False
@@ -49,6 +50,9 @@ class Api():
         Stop the Flask web server
         """
         if self.running:
-            requests.get(
-                f"http://127.0.0.1:{self.port}/shutdown/"
-            )
+            try:
+                requests.get(
+                    f"http://127.0.0.1:{self.port}/shutdown/"
+                )
+            except ConnectionError:
+                self.running = False

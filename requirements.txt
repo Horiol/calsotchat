@@ -1,10 +1,14 @@
+altgraph==0.17
 backcall==0.2.0
 certifi==2020.6.20
 chardet==3.0.4
 click==7.1.2
 decorator==4.4.2
+dnspython==1.16.0
+eventlet==0.29.1
 Flask==1.1.2
 Flask-SocketIO==4.3.1
+greenlet==0.4.17
 idna==2.10
 itsdangerous==1.1.0
 jedi==0.17.2
