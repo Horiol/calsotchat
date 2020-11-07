@@ -3,14 +3,11 @@ from requests.exceptions import ConnectionError
 import logging
 
 from flask import Flask, request
-from flask_socketio import SocketIO
+from backend.socket_logic import socketio
+from backend.chat import chat_bp
 
 app = Flask(__name__)
-socketio = SocketIO(app)
-
-@app.route("/")
-def index():
-    return "ok"
+app.register_blueprint(chat_bp)
 
 class Api():
     """
@@ -22,6 +19,7 @@ class Api():
         self.port = None
         self.app = app
         self.socketio = socketio
+        self.socketio.init_app(self.app)
 
         self._define_internal_routes()
 

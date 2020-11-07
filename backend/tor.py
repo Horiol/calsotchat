@@ -15,7 +15,7 @@ class Tor():
         self.service = None # Onion Service
         self.tor_control_port = 9051 # Tor control port
 
-    def start_service(self, port=5000):
+    def start_service(self, onion_port=80, port=5000):
         """Start Onion Hidden Services
 
         Args:
@@ -30,7 +30,7 @@ class Tor():
 
             # Create Onion Hidden Service
             self.service = self.controller.create_ephemeral_hidden_service(
-                {80: port}, 
+                {onion_port: port}, 
                 await_publication = True
             )
             
