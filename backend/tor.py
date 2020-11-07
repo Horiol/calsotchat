@@ -35,7 +35,10 @@ class Tor():
             )
             
         # return onion route
-        return self.service.service_id + ".onion"
+        route = self.service.service_id + ".onion"
+        if onion_port != 80:
+            route += ":" + str(onion_port)
+        return route
 
     def stop_service(self):
         if self.service is not None:

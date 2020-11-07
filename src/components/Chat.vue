@@ -9,6 +9,13 @@
       <input type="text" v-model="msg">
     </p>
     <button @click="sendMessage()">Send</button>
+    <br>
+    <br>
+    Messages received:
+    <br>
+    <p v-for="message in messages" :key="message">
+      <strong>{{message.origin}}</strong> -> {{message.msg}}
+    </p>
   </div>
 </template>
 
@@ -17,19 +24,26 @@ export default {
   name: 'Chat',
   data:() => ({
     msg:'',
-    destiny:''
+    destiny:'',
+    messages:[]
   }),
   methods: {
     sendMessage(){
       console.log("Sending message to " + this.destiny);
-      this.axios
-      .post('http://127.0.0.1:5000/api/send_message', {
+      var msg_data = {
         destiny: this.destiny,
         msg: this.msg
-      })
-      .then(response => (console.log(response)))
+      }
+      this.$socket.emit('send-message', msg_data)
     }
-  }
+  },
+  sockets: {
+    newMessage: function (data) {
+        console.log(data)
+        this.messages.push(data)
+    }
+  },
+
 }
 </script>
 

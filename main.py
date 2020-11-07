@@ -21,7 +21,7 @@ def main(onion_port, port):
     route = tor_service.start_service(onion_port, port)
     logging.info(f"Onion service started and listening in {route}")
     
-    flask_api = Api()
+    flask_api = Api(route)
     # Start API service in new thread
     thread = threading.Thread(target=flask_api.start, args=(port,))
     thread.daemon = True
