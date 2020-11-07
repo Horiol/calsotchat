@@ -1,25 +1,33 @@
 {
   "name": "calsotchat",
   "version": "0.1.0",
-  "description": "CalsotChat is an open source tool that lets you securely and anonymously  chat with friends using the Tor network.",
   "private": true,
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
-    "lint": "vue-cli-service lint"
+    "lint": "vue-cli-service lint",
+    "electron:build": "vue-cli-service electron:build",
+    "electron:serve": "vue-cli-service electron:serve",
+    "postinstall": "electron-builder install-app-deps",
+    "postuninstall": "electron-builder install-app-deps"
   },
+  "main": "background.js",
   "dependencies": {
     "core-js": "^3.6.5",
-    "vue": "^3.0.0"
+    "vue": "^2.6.11",
+    "vuesax": "^4.0.1-alpha.25"
   },
   "devDependencies": {
     "@vue/cli-plugin-babel": "~4.5.0",
     "@vue/cli-plugin-eslint": "~4.5.0",
     "@vue/cli-service": "~4.5.0",
-    "@vue/compiler-sfc": "^3.0.0",
     "babel-eslint": "^10.1.0",
+    "electron": "^9.0.0",
+    "electron-devtools-installer": "^3.1.0",
     "eslint": "^6.7.2",
-    "eslint-plugin-vue": "^7.0.0-0"
+    "eslint-plugin-vue": "^6.2.2",
+    "vue-cli-plugin-electron-builder": "~2.0.0-rc.5",
+    "vue-template-compiler": "^2.6.11"
   },
   "eslintConfig": {
     "root": true,
@@ -27,7 +35,7 @@
       "node": true
     },
     "extends": [
-      "plugin:vue/vue3-essential",
+      "plugin:vue/essential",
       "eslint:recommended"
     ],
     "parserOptions": {
@@ -35,16 +43,6 @@
     },
     "rules": {}
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/Horiol/calsotchat.git"
-  },
-  "author": "oriol.vall.hdez@gmail.com",
-  "license": "GPL-3.0",
-  "bugs": {
-    "url": "https://github.com/Horiol/calsotchat/issues"
-  },
-  "homepage": "https://github.com/Horiol/calsotchat#readme",
   "browserslist": [
     "> 1%",
     "last 2 versions",

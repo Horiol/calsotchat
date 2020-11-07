@@ -30,7 +30,7 @@ dist/clasotchat/calsotchat
 
 =============================
 
-# Electron
+# Vue
 
 
 # calsotchat
@@ -57,3 +57,20 @@ yarn lint
 
 ### Customize configuration
 See [Configuration Reference](https://cli.vuejs.org/config/).
+
+
+# Electron
+
+## Start develop server
+```
+yarn electron:serve
+or
+npm run electron:serve
+```
+
+## Build app
+```
+yarn electron:build
+or
+npm run electron:build
+```
