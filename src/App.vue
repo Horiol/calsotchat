@@ -1,16 +1,16 @@
 <template>
   <div id="app">
-    <Sidebar/>
+    <Chat />
   </div>
 </template>
 
 <script>
-import Sidebar from './components/Sidebar.vue'
+import Chat from './components/Chat.vue'
 
 export default {
   name: 'App',
   components: {
-    Sidebar,
+    Chat
   }
 }
 </script>
@@ -23,8 +23,5 @@ export default {
   text-align: center;
   color: #2c3e50;
   margin-top: 60px;
-}
-#chat {
-  margin-left: 45px;
 }
 </style>

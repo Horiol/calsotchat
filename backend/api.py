@@ -3,11 +3,13 @@ from requests.exceptions import ConnectionError
 import logging
 
 from flask import Flask, request
+from flask_cors import CORS
 from backend.socket_logic import socketio
 from backend.chat import chat_bp
 
 app = Flask(__name__)
-app.register_blueprint(chat_bp)
+cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
+app.register_blueprint(chat_bp, url_prefix="/api")
 
 class Api():
     """
