@@ -120,6 +120,11 @@ export default {
             })[0]
             this.$emit('input', contact)
         }
+    },
+    sockets: {
+        contactList: function(data) {
+            this.contacts = data
+        }
     }
 }
 </script>
