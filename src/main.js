@@ -3,6 +3,14 @@ import App from './App.vue'
 import axios from 'axios'
 import VueAxios from 'vue-axios'
 import VueSocketIO from 'vue-socket.io';
+import Vuesax from 'vuesax'
+
+import 'vuesax/dist/vuesax.css' 
+import './assets/css/boxicons.min.css'
+
+Vue.use(Vuesax, {
+  // options here
+})
 
 Vue.use(new VueSocketIO({
   debug: true,
