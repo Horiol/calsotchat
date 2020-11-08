@@ -43,6 +43,10 @@ class Api():
             self.running = False
             self.socketio.stop()
             return ""
+        
+        @self.app.route("/healthz/")
+        def healthz():
+            return {"status":"ok"}
 
         @self.app.route('/api/new_message', methods=['POST'])
         def new_message():
@@ -50,6 +54,14 @@ class Api():
             print(content['msg'])
             self.socketio.emit('newMessage', content, namespace="/internal")
             return {"message": "received"}
+
+        @self.socketio.on('connect', namespace='/internal')
+        @self.socketio.on('update-status', namespace='/internal')
+        def updateStatus():
+            status = {
+                "own_route": self.origin
+            }
+            self.socketio.emit('statusResponse', status, namespace="/internal")
 
         @self.socketio.on('send-message', namespace='/internal')
         def handleMessage(content):

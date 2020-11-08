@@ -1,0 +1,7 @@
+appId: "com.calsotchat.app"
+productName: "CalsotChat"
+extraResources:
+    from: "dist_python/"
+    to: "dist_python"
+    filter:
+        - "**/*"
