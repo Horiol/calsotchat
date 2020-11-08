@@ -10,7 +10,7 @@
             </template>
             <template #footer>
                 <vs-button @click="new_contact_dialog=!new_contact_dialog">
-                    Add Contact
+                    <i class='bx bxs-user-plus' ></i> Add Contact
                 </vs-button>
             </template>
 

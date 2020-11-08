@@ -19,8 +19,6 @@
           <vs-button 
             icon
             @click="sendMessage()"
-            :active="true"
-            relief
           >
             <i class='bx bxs-paper-plane' ></i>
           </vs-button>
@@ -70,15 +68,17 @@ export default {
       }
     },
     sendMessage(){
-      var msg_data = {
-        destiny: this.destiny,
-        msg: this.msg,
-        timestamp: Date.now()
+      if (this.msg !== ''){
+        var msg_data = {
+          destiny: this.destiny,
+          msg: this.msg,
+          timestamp: Date.now()
+        }
+        this.$socket.emit('send-message', msg_data)
+        this.messages.push(msg_data)
+        this.msg = ''
+        this.active = false
       }
-      this.$socket.emit('send-message', msg_data)
-      this.messages.push(msg_data)
-      this.msg = ''
-      this.active = false
     },
     check_message_origin: function(message){
       if ('destiny' in message){

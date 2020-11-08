@@ -1,8 +1,6 @@
 <template>
   <div id="app">
-    <h3>
-      {{own_route}}
-    </h3>
+    <nav-bar :own_route="own_route"/>
     <contacts-list v-on:input="userSelected"/>
     <div class="grid main-window">
       <vs-row>
@@ -17,12 +15,14 @@
 <script>
 import Chat from './components/Chat.vue'
 import ContactsList from './components/ContactsList.vue'
+import NavBar from './components/NavBar.vue'
 
 export default {
   name: 'App',
   components: {
     Chat,
-    ContactsList
+    ContactsList,
+    NavBar
   },
   data:() => ({
     own_route:null,
