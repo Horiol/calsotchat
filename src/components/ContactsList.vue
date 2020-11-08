@@ -63,6 +63,10 @@ export default {
             {
                 address:'gxf3xsmy6trcaugd5pvfpr652qxnzizx4zxf5smcwtczobters37awad.onion:8080',
                 name:'Test User'
+            },
+            {
+                address:'another address',
+                name:'Another User'
             }
         ],
         active:null,

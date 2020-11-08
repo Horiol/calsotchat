@@ -51,13 +51,13 @@ export default {
   font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  text-align: center;
   color: #2c3e50;
   margin-top: 60px;
+  overflow-x: hidden;
 }
 
 .main-window{
-  margin-left: 260px;
+  margin-left: 280px;
 }
 
 .not-margin {
