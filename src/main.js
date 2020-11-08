@@ -6,7 +6,7 @@ import VueSocketIO from 'vue-socket.io';
 
 Vue.use(new VueSocketIO({
   debug: true,
-  connection: 'http://127.0.0.1:5010/internal'
+  connection: 'http://127.0.0.1:5000/internal'
 }));
 
 Vue.config.productionTip = false

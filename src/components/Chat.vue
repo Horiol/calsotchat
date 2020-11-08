@@ -13,7 +13,7 @@
     <br>
     Messages received:
     <br>
-    <p v-for="message in messages" :key="message">
+    <p v-for="message in messages" :key="message.timestamp">
       <strong>{{message.origin}}</strong> -> {{message.msg}}
     </p>
   </div>
@@ -25,7 +25,7 @@ export default {
   data:() => ({
     msg:'',
     destiny:'',
-    messages:[]
+    messages:[],
   }),
   methods: {
     sendMessage(){
@@ -39,7 +39,6 @@ export default {
   },
   sockets: {
     newMessage: function (data) {
-        console.log(data)
         this.messages.push(data)
     }
   },

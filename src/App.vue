@@ -1,5 +1,8 @@
 <template>
   <div id="app">
+    <h3>
+      {{own_route}}
+    </h3>
     <Chat />
   </div>
 </template>
@@ -11,6 +14,19 @@ export default {
   name: 'App',
   components: {
     Chat
+  },
+  data:() => ({
+    own_route:null
+  }),
+  mounted: function(){
+    if (this.own_route === null){
+      this.$socket.emit('update-status')
+    }
+  },
+  sockets: {
+    statusResponse: function(data) {
+      this.own_route = data.own_route
+    }
   }
 }
 </script>
