@@ -22,6 +22,9 @@
 <script>
 export default {
   name: 'Chat',
+  props:{
+    contact:Object
+  },
   data:() => ({
     msg:'',
     destiny:'',
@@ -42,7 +45,13 @@ export default {
         this.messages.push(data)
     }
   },
-
+  watch:{
+    contact: function(){
+      if (this.contact !== null){
+        this.destiny = this.contact.address
+      }
+    }
+  }
 }
 </script>
 

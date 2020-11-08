@@ -1,10 +1,24 @@
 <template>
-    <div class="grid">
-        <vs-row justify="center">
-            <vs-button @click="new_contact_dialog=!new_contact_dialog">
-                Add Contact
-            </vs-button>
-        </vs-row>
+    <div class="hidden">
+        <vs-sidebar 
+        absolute 
+        v-model="active" 
+        v-on:input="userSelected" 
+        open>
+            <template #header>
+                <h3>Contacts</h3>
+            </template>
+            <template #footer>
+                <vs-button @click="new_contact_dialog=!new_contact_dialog">
+                    Add Contact
+                </vs-button>
+            </template>
+
+            <vs-sidebar-item v-for="contact in contacts" :id="contact.address" :key="contact.address">
+                {{contact.name}}
+            </vs-sidebar-item>
+        </vs-sidebar>
+
         <vs-dialog v-model="new_contact_dialog">
             <template #header>
                 <h4 class="not-margin">
@@ -37,10 +51,6 @@
                 </div>
             </template>
         </vs-dialog>
-
-        <p v-for="contact in contacts" :key="contact.address">
-            {{contact.name}}
-        </p>
     </div>
 </template>
 
@@ -49,12 +59,24 @@ export default {
     name:"ContactsList",
     data:() => ({
         new_contact_dialog:false,
-        contacts:[],
+        contacts:[
+            {
+                address:'gxf3xsmy6trcaugd5pvfpr652qxnzizx4zxf5smcwtczobters37awad.onion:8080',
+                name:'Test User'
+            }
+        ],
+        active:null,
         new_contact:{
             address:'',
             name:''
         }
     }),
+    mounted: function(){
+        if (this.contacts.length > 0){
+            this.active = this.contacts[0].address
+            this.$emit('input', this.contacts[0])
+        }
+    },
     watch: {
         new_contact_dialog: function(){
             this.new_contact = {
@@ -87,6 +109,12 @@ export default {
                 this.contacts.push(this.new_contact)
                 this.new_contact_dialog = false 
             }
+        },
+        userSelected: function(user_address){
+            var contact = this.contacts.filter(function(element){
+                return element.address == user_address
+            })[0]
+            this.$emit('input', contact)
         }
     }
 }

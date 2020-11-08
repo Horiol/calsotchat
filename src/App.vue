@@ -3,15 +3,11 @@
     <h3>
       {{own_route}}
     </h3>
-    <div class="grid">
+    <contacts-list v-on:input="userSelected"/>
+    <div class="grid main-window">
       <vs-row>
-        <vs-col w="6">
-          <strong>Contacts</strong>
-          <contacts-list/>
-        </vs-col>
-        <vs-col w="6">
-          <strong>Chat</strong>
-          <chat/>
+        <vs-col w="12">
+          <chat :contact="selected_contact"/>
         </vs-col>
       </vs-row>
     </div>
@@ -29,11 +25,17 @@ export default {
     ContactsList
   },
   data:() => ({
-    own_route:null
+    own_route:null,
+    selected_contact:null
   }),
   mounted: function(){
     if (this.own_route === null){
       this.$socket.emit('update-status')
+    }
+  },
+  methods:{
+    userSelected: function(user){
+      this.selected_contact = user
     }
   },
   sockets: {
@@ -52,6 +54,10 @@ export default {
   text-align: center;
   color: #2c3e50;
   margin-top: 60px;
+}
+
+.main-window{
+  margin-left: 260px;
 }
 
 .not-margin {
