@@ -3,7 +3,7 @@
         <template #title>
             <div v-bind:class="{ my_message_title: isMine }">
                 <span v-if="isMine">You</span>
-                <span v-else>Other</span>
+                <span v-else>{{contact.name}}</span>
             </div>
         </template>
             <div v-bind:class="{ my_message: isMine }">
@@ -16,7 +16,8 @@
 export default {
     name: 'Message',
     props:{
-        message:Object
+        message:Object,
+        contact:Object
     },
     computed:{
         isMine(){

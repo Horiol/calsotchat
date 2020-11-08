@@ -4,6 +4,7 @@
       <h3>Select a contact to start a chat</h3>
     </vs-row>
     <div class="hidden" v-else>
+      <vs-row><h2>{{contact.name}}</h2></vs-row>
       <vs-row justify="center" align="center">
         <vs-col w="11">
           <div class="con-form">
@@ -29,7 +30,7 @@
           v-for="message in messages" 
           :key="message.timestamp"
         >
-          <message :message="message"/>
+          <message :message="message" :contact="contact"/>
         </vs-row>
       </div>
     </div>
