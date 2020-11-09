@@ -13,6 +13,7 @@ rooms_contacts_association = db.Table('rooms_contacts_association',
 class Room(db.Model):
     __tablename__ = 'room'
     id = db.Column(db.Integer, primary_key=True)
+    hash = db.Column(db.String, unique=True)
     name = db.Column(db.String, nullable=False)
     private = db.Column(db.Boolean, default=False)
 
@@ -22,58 +23,73 @@ class Room(db.Model):
         if not self.id:
             db.session.add(self)
         db.session.commit()
+
     def delete(self):
         db.session.delete(self)
         db.session.commit()
 
-@dataclass
-class Contact(db.Model):
-    id: int
-    address: str
-    name: str
-    online: bool
+    def update(self, **kwargs):
+        for key, value in kwargs.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
+        self.save()
 
+class Contact(db.Model):
     __tablename__ = 'contact'
     id = db.Column(db.Integer, primary_key=True)
     address = db.Column(db.String, unique=True)
-    name = db.Column(db.String, nullable=False)
+    name = db.Column(db.String, nullable=True)
+    nickname = db.Column(db.String, nullable=False)
     online = db.Column(db.Boolean, default=False)
+
+    def to_json(self):
+        json_data = {
+            'name':self.name,
+            'nickname':self.nickname,
+            'address':self.address,
+            'id':self.id,
+        }
+        return json_data
 
     def save(self):
         if not self.id:
             db.session.add(self)
             # Create a room to talk only with this person
             private_room = Room(
-                name=self.address,
+                name=self.name or self.nickname,
+                hash=self.address,
                 private=True # Flag to avoid showing this room in contacts list
             )
             private_room.save()
             private_room.members.append(self)
 
         db.session.commit()
+
     def delete(self):
         db.session.delete(self)
         db.session.commit()
 
+    def update(self, **kwargs):
+        for key, value in kwargs.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
+        self.save()
+        
+        private_room = Room.query.filter_by(hash=self.address).first()
+        private_room.update(name=self.name)
 
 class MessageStatus(enum.Enum):
-    READ = 'read'
-    RECEIVED = 'received'
-    DISPATCHED = 'dispatched'
-    QUEUED = 'queued'
+    READ = 'READ'
+    RECEIVED = 'RECEIVED'
+    DISPATCHED = 'DISPATCHED'
+    QUEUED = 'QUEUED'
 
-@dataclass
 class Message(db.Model):
-    id: int
-    sender_address: str
-    msg: str
-    # status: str
-    timestamp: datetime
-
     __tablename__ = 'message'
     id = db.Column(db.Integer, primary_key=True)
     sender_address = db.Column(db.String, db.ForeignKey('contact.address'))
-    room_id = db.Column(db.Integer, db.ForeignKey('room.id'))
+    sender_nickname = db.Column(db.String, nullable=False)
+    room_hash = db.Column(db.String, db.ForeignKey('room.hash'))
     msg = db.Column(db.String, nullable=False)
     status = db.Column(db.Enum(MessageStatus), nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
@@ -92,14 +108,16 @@ class Message(db.Model):
     def to_json(self):
         json_data = {
             'msg':self.msg,
-            'room_id':self.room_id,
+            'room_hash':self.room_hash,
             'sender_address':self.sender_address,
+            'sender_nickname':self.sender_nickname,
         }
         return json_data
 
     
     def from_json(self, json_data):
         self.msg = json_data['msg']
-        self.room_id = json_data['room_id']
+        self.room_hash = json_data['room_hash']
         self.sender_address = json_data['sender_address']
+        self.sender_nickname = json_data['sender_nickname']
         self.status = MessageStatus.RECEIVED

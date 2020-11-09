@@ -159,3 +159,5 @@ pnpm-debug.log*
 #Electron-builder output
 /dist_electron
 dist_python/
+
+*calsotchat\.sqlite

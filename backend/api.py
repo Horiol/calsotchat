@@ -4,47 +4,21 @@ import logging
 import json
 import time
 
-from flask import Flask, request, jsonify
-from flask.json import dumps
+from flask import Flask, request
 from flask_cors import CORS
 from flask_socketio import SocketIO
+from flask_restx import Api
 from db import db
-from models import Message, Contact, Room, MessageStatus
-# from backend.models import Message, Contact, Room
 
+# from backend.api_routes_v1 import blueprint
+# from backend.models import Message, Contact, Room
+from api_namespace import api as namespace_api
+from models import Message, Contact, Room, MessageStatus
 
 logging.basicConfig(
     level=logging.DEBUG,
     format='[%(levelname)-8s] (%(threadName)-10s) (%(filename)-10s:%(lineno)3d) %(message)s',
 )
-
-def create_app(address):
-    app = Flask(__name__)
-    
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///calsotchat.sqlite'
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
-
-    db.init_app(app)
-
-    with app.app_context():
-        db.create_all()
-        
-        # Check if current user is created in db, otherwise create it
-        myself = Contact.query.filter_by(address=address).first()
-        if not myself:
-            myself = Contact(
-                name="Current User",
-                address=address,
-                online=True
-            )
-            myself.save()
-            logging.info("'Current User' created")
-
-        return app
-
-    # app.config['SECRET_KEY'] = '7110c8ae51a4b5af97be6534caef90e4bb9bdcb3380af008f90b23a5d1616bf319bc298105da20fe'
-
 
 json_headers = {
     'Content-Type': 'application/json'
@@ -57,7 +31,34 @@ onion_session.proxies = {
     'https': f'socks5h://127.0.0.1:9050'
 }
 
-class Api():
+def create_app(address):
+    app = Flask(__name__)
+    
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///calsotchat.sqlite'
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    cors = CORS(app, resources={r"/api*": {"origins": "*"}})
+
+    db.init_app(app)
+
+    with app.app_context():
+        db.create_all()
+        
+        # Check if current user is created in db, otherwise create it
+        myself = Contact.query.filter_by(address=address).first()
+        if not myself:
+            myself = Contact(
+                nickname="",
+                address=address,
+                online=True
+            )
+            myself.save()
+            logging.info("Local user created")
+
+        return app
+
+    # app.config['SECRET_KEY'] = '7110c8ae51a4b5af97be6534caef90e4bb9bdcb3380af008f90b23a5d1616bf319bc298105da20fe'
+
+class MainApi():
     """
     API server powered by Flask
     """
@@ -66,6 +67,12 @@ class Api():
         self.running = False
         self.port = None
         self.app = create_app(origin)
+        self.api = api = Api(self.app, version='1.0', title='TodoMVC API',
+            description='A simple TodoMVC API',
+            doc=False
+        )
+        self.api.add_namespace(namespace_api, path='/api')
+
         self.socketio = SocketIO(cors_allowed_origins="*")
         self.socketio.init_app(self.app)
         self.origin = origin
@@ -82,15 +89,21 @@ class Api():
         @self.app.route("/healthz/")
         def healthz():
             return {"status":"ok"}
+        
+        @self.app.route("/api/myself/")
+        def myself():
+            me = Contact.query.filter_by(address=self.origin).first()
+            return me.to_json()
 
-        @self.app.route('/api/new_message', methods=['POST'])
+        @self.app.route('/api_internal/new_message/', methods=['POST'])
         def new_message():
             content = request.json
 
             sender = Contact.query.filter_by(address=content['sender_address']).first()
             if not sender:
                 sender = Contact(
-                    name="Unknown",
+                    nickname=content['sender_nickname'],
+                    name=content['sender_nickname'],
                     address=content['sender_address'],
                     online=True
                 )
@@ -103,43 +116,30 @@ class Api():
 
             self.socketio.emit('newMessage', message.to_json(), namespace="/internal")
             return {"message": "received"}
-        
-        @self.app.route('/api/messages', methods=['GET'])
-        def get_message():
-            messages = Message.query.all()
-
-            return jsonify(messages)
-
-        @self.socketio.on('connect', namespace='/internal')
-        @self.socketio.on('update-status', namespace='/internal')
-        def updateStatus():
-            status = {
-                "own_route": self.origin
-            }
-            self.socketio.emit('statusResponse', status, namespace="/internal")
-
-            # Emit a list of all contacts
-            contacts = Contact.query.filter(Contact.address != self.origin).all()
-            self.socketio.emit('contactList', json.loads(dumps(contacts)), namespace="/internal")
 
         @self.socketio.on('send-message', namespace='/internal')
         def handleMessage(content):
+            me = Contact.query.filter_by(address=self.origin).first()
+
             message = Message(
-                sender_addres=self.origin,
-                room_id=content['room_id'],
+                sender_address=me.address,
+                sender_nickname=me.nickname,
+                room_hash=content['room_hash'],
                 msg=content['msg'],
-                status=MessageStatus.QUEUED
+                status=MessageStatus.QUEUED,
+
             )
             message.save()
 
-            receivers = Room.query.get(content['room_id']).members
+            receivers = Room.query.filter_by(hash=content['room_hash']).first().members
             for receiver in receivers: # TODO: review and make it more asyncronous
-                onion_session.post(
-                    f'http://{receiver["address"]}/api/new_message', 
-                    data=json.dumps(message.to_json()),
-                    headers=json_headers
-                )
-                logging.info(f"Message {message.id} sent to {receiver.name}")
+                if receiver.address != self.origin:
+                    onion_session.post(
+                        f'http://{receiver["address"]}/api_internal/new_message/', 
+                        data=json.dumps(message.to_json()),
+                        headers=json_headers
+                    )
+                    logging.info(f"Message {message.id} sent to {receiver.name}")
             
             message.status = MessageStatus.DISPATCHED
             message.save()
@@ -183,6 +183,6 @@ if __name__ == "__main__":
     code only for development
     """
 
-    api = Api('gxf3xsmy6trcaugd5pvfpr652qxnzizx4zxf5smcwtczobters37awad.onion:8080')
+    api = MainApi('gxf3xsmy6trcaugd5pvfpr652qxnzizx4zxf5smcwtczobters37awad.onion:8080')
 
     api.start(dev=True)
