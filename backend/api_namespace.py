@@ -126,17 +126,20 @@ class RoomResource(Resource):
 
         return room
 
-@api.route(f'/{rooms_ns}/<int:id>/')
+@api.route(f'/{rooms_ns}/<string:hash>/')
 class RoomInstanceResource(Resource):
     @api.marshal_with(room_model)
-    def get(self, id):
-        return Room.query.get(id)
+    def get(self, hash):
+        room = Room.query.filter_by(hash=hash).first()
+        if not room:
+            raise NotFound()
+        return room
 
     @api.response(204, 'Item deleted')
-    def delete(self, id):
-        message = Room.query.get(id)
-        if message:
-            message.delete()
+    def delete(self, hash):
+        room = Room.query.filter_by(hash=hash).first()
+        if room:
+            room.delete()
         return '', 204
 
 @api.route(f'/{rooms_ns}/<string:hash>/messages/')

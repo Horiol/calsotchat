@@ -25,7 +25,7 @@
             </vs-sidebar-item>
         </vs-sidebar>
 
-        <vs-dialog v-model="new_contact_dialog">
+        <vs-dialog v-model="new_contact_dialog" :loading="loading_dialog">
             <template #header>
                 <h4 class="not-margin">
                     New Contact
@@ -69,6 +69,7 @@ export default {
     data:() => ({
         new_contact_dialog:false,
         active:null,
+        loading_dialog: false,
         new_contact:{
             address:'',
             name:''
@@ -109,18 +110,22 @@ export default {
     methods:{
         addNewContact: function(){
             if (this.validAddress){
+                this.loading_dialog = true
                 this.axios
-                    .post('http://localhost:5000/api/contacts/', {
-                        "name": this.new_contact.name,
-                        "nickame": this.new_contact.name,
-                        "address": this.new_contact.address
-                    })
+                .post('http://localhost:5000/api/contacts/', {
+                    "name": this.new_contact.name,
+                    "nickname": this.new_contact.name,
+                    "address": this.new_contact.address
+                })
+                .then(response => {
+                    this.axios
+                    .get('http://localhost:5000/api/rooms/' + response.data.address + "/")
                     .then(response => {
                         this.$emit('new-contact', response.data)
-                    })
-                    .then(function(){
+                        this.loading_dialog = false
                         this.new_contact_dialog = false 
                     })
+                })
             }
         },
         userSelected: function(room_hash){
