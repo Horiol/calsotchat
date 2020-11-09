@@ -160,4 +160,4 @@ pnpm-debug.log*
 /dist_electron
 dist_python/
 
-*calsotchat\.sqlite
+backend/calsotchat\.sqlite
