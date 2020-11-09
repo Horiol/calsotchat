@@ -5,6 +5,9 @@
         v-model="active" 
         v-on:input="userSelected" 
         open>
+            <template #logo>
+                <img class="custom-logo" src="@/assets/icon.png">
+            </template>
             <template #header>
                 <h3>Contacts</h3>
             </template>
@@ -13,8 +16,11 @@
                     <i class='bx bxs-user-plus' ></i> Add Contact
                 </vs-button>
             </template>
+            <vs-sidebar-item v-if="contacts.length == 0" id="no_contacts">
+                
+            </vs-sidebar-item>
 
-            <vs-sidebar-item v-for="contact in contacts" :id="contact.address" :key="contact.address">
+            <vs-sidebar-item v-for="contact in contacts" :id="contact.hash" :key="contact.hash">
                 {{contact.name}}
             </vs-sidebar-item>
         </vs-sidebar>
@@ -57,18 +63,11 @@
 <script>
 export default {
     name:"ContactsList",
+    props:{
+        contacts:Array
+    },
     data:() => ({
         new_contact_dialog:false,
-        contacts:[
-            {
-                address:'gxf3xsmy6trcaugd5pvfpr652qxnzizx4zxf5smcwtczobters37awad.onion:8080',
-                name:'Test User'
-            },
-            {
-                address:'another address',
-                name:'Another User'
-            }
-        ],
         active:null,
         new_contact:{
             address:'',
@@ -76,10 +75,10 @@ export default {
         }
     }),
     mounted: function(){
-        if (this.contacts.length > 0){
-            this.active = this.contacts[0].address
-            this.$emit('input', this.contacts[0])
-        }
+        // if (this.contacts.length > 0){
+        //     this.active = this.contacts[0].address
+        //     this.$emit('input', this.contacts[0])
+        // }
     },
     watch: {
         new_contact_dialog: function(){
@@ -110,25 +109,39 @@ export default {
     methods:{
         addNewContact: function(){
             if (this.validAddress){
-                this.contacts.push(this.new_contact)
-                this.new_contact_dialog = false 
+                this.axios
+                    .post('http://localhost:5000/api/contacts/', {
+                        "name": this.new_contact.name,
+                        "nickame": this.new_contact.name,
+                        "address": this.new_contact.address
+                    })
+                    .then(response => {
+                        this.$emit('new-contact', response.data)
+                    })
+                    .then(function(){
+                        this.new_contact_dialog = false 
+                    })
             }
         },
-        userSelected: function(user_address){
-            var contact = this.contacts.filter(function(element){
-                return element.address == user_address
+        userSelected: function(room_hash){
+            var room = this.contacts.filter(function(element){
+                return element.hash == room_hash
             })[0]
-            this.$emit('input', contact)
+            this.$emit('input', room)
         }
     },
-    sockets: {
-        contactList: function(data) {
-            this.contacts = data
-        }
-    }
+    // sockets: {
+    //     contactList: function(data) {
+    //         this.contacts = data
+    //     }
+    // }
 }
 </script>
 
 <style>
-
+/* .vs-sidebar-content .vs-sidebar__logo img{ */
+.custom-logo{
+    max-width: 120px !important;
+    max-height: 120px !important;
+}
 </style>

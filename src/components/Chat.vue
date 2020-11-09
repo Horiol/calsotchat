@@ -1,10 +1,10 @@
 <template>
   <div class="grid">
-    <vs-row justify="center" v-if="contact === null">
+    <vs-row justify="center" v-if="room === null">
       <h3>Select a contact to start a chat</h3>
     </vs-row>
     <div class="hidden" v-else>
-      <vs-row><h2>{{contact.name}}</h2></vs-row>
+      <vs-row><h2>{{room.name}}</h2></vs-row>
       <vs-row justify="center" align="center">
         <vs-col w="11">
           <div class="con-form">
@@ -27,10 +27,11 @@
       </vs-row>
       <div id="chat-window">
         <vs-row 
+          :justify="check_message_origin(message)"
           v-for="message in messages" 
           :key="message.timestamp"
         >
-          <message :message="message" :contact="contact"/>
+          <message :message="message" :myself="myself"/>
         </vs-row>
       </div>
     </div>
@@ -45,44 +46,38 @@ export default {
     Message
   },
   props:{
-    contact:Object
+    room:Object,
+    myself:Object,
   },
   data:() => ({
     active:false,
     msg:'',
-    destiny:'',
     messages:[
-      {
-        timestamp:1,
-        origin: "gxf3xsmy6trcaugd5pvfpr652qxnzizx4zxf5smcwtczobters37awad.onion:8080",
-        name: "Test User",
-        msg: "test message"
-      }
+      // {
+      //   timestamp:1,
+      //   origin: "gxf3xsmy6trcaugd5pvfpr652qxnzizx4zxf5smcwtczobters37awad.onion:8080",
+      //   name: "Test User",
+      //   msg: "test message"
+      // }
     ],
   }),
   methods: {
-    author(message){
-      if ('destiny' in message){
-        return 'You'
-      } else {
-        return message.origin
-      }
-    },
     sendMessage(){
       if (this.msg !== ''){
         var msg_data = {
-          destiny: this.destiny,
-          msg: this.msg,
-          timestamp: Date.now()
+          room_hash: this.room.hash,
+          msg: this.msg
         }
         this.$socket.emit('send-message', msg_data)
+
+        msg_data['sender'] = this.myself
         this.messages.push(msg_data)
         this.msg = ''
         this.active = false
       }
     },
     check_message_origin: function(message){
-      if ('destiny' in message){
+      if (message.sender.id == this.myself.id){
         return 'flex-end'
       } else {
         return 'flex-start'
@@ -95,9 +90,13 @@ export default {
     }
   },
   watch:{
-    contact: function(){
-      if (this.contact !== null){
-        this.destiny = this.contact.address
+    room: function(){
+      if (this.room !== null){
+        this.axios
+          .get('http://localhost:5000/api/rooms/' + this.room.hash + "/messages/")
+          .then((response) => {
+            this.messages = response.data.reverse()
+          })
       }
     },
     messages: function(){
@@ -116,6 +115,7 @@ export default {
   margin-right:50px;
   margin-left:50px;
   overflow-y: auto;
+  overflow-x:hidden;
   max-height: calc(75vh - 50px);
 }
 </style>

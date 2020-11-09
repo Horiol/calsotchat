@@ -1,14 +1,43 @@
 <template>
   <div id="app">
-    <nav-bar :own_route="own_route"/>
-    <contacts-list v-on:input="userSelected"/>
+    <nav-bar :own_route="myself.address"/>
+    <contacts-list 
+      v-on:input="userSelected" 
+      :contacts="contacts"
+      @new-contact="addContact"
+    />
     <div class="grid main-window">
       <vs-row>
         <vs-col w="12">
-          <chat :contact="selected_contact"/>
+          <chat :myself="myself" :room="selected_contact"/>
         </vs-col>
       </vs-row>
     </div>
+
+    <vs-dialog not-close v-model="haveNickname">
+            <template #header>
+                <h4 class="not-margin">
+                    Write your Nickname
+                </h4>
+            </template>
+
+
+        <div class="con-form">
+            <vs-input v-model="new_nickname" label-placeholder="Nickname">
+                <template #icon>
+                    <i class='bx bxs-user' ></i>
+                </template>
+            </vs-input>
+        </div>
+
+        <template #footer>
+            <div class="footer-dialog">
+                <vs-button block @click="saveNickname">
+                    Set Nickname
+                </vs-button>
+            </div>
+        </template>
+    </vs-dialog>
   </div>
 </template>
 
@@ -25,35 +54,72 @@ export default {
     NavBar
   },
   data:() => ({
-    own_route:null,
-    selected_contact:null
+    myself:{
+      address:null,
+      nickname:null
+    },
+    new_nickname:"",
+    selected_contact:null,
+    contacts: [],
+    loading: null
   }),
   mounted: function(){
-    if (this.own_route === null){
-      this.$socket.emit('update-status')
+    this.loading = this.$vs.loading()
+    this.axios.all([
+      this.axios
+        .get('http://localhost:5000/api/myself/'),
+      this.axios
+        .get('http://localhost:5000/api/rooms/')
+    ])
+    .then(this.axios.spread((first_response, second_response) => {
+      this.myself = first_response.data
+      this.contacts = second_response.data
+      this.loading.close()
+    }))
+  },
+  computed:{
+    haveNickname: function(){
+      return this.myself.nickname == ""
     }
   },
   methods:{
-    userSelected: function(user){
-      this.selected_contact = user
+    addContact: function(contact){
+      this.contacts.push(contact)
+    },
+    userSelected: function(room){
+      this.selected_contact = room
+    },
+    saveNickname: function(){
+      this.axios
+        .put('http://localhost:5000/api/contacts/'+this.myself.id+'/', {
+          "name": this.new_nickname,
+          "nickname": this.new_nickname,
+          "address": this.myself.address
+        })
     }
   },
-  sockets: {
-    statusResponse: function(data) {
-      this.own_route = data.own_route
-    }
-  }
+  // sockets: {
+  //   statusResponse: function(data) {
+  //     this.own_route = data.own_route
+  //     this.axios
+  //       .get('http://localhost:5000/api/contacts/')
+  //       .then(response => {
+  //         this.contacts = response.data
+  //     })
+  //   }
+  // }
 }
 </script>
 
 <style>
+
 #app {
   font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  color: #2c3e50;
   margin-top: 60px;
   overflow-x: hidden;
+  color: rgba(var(--vs-primary), 1);
 }
 
 .main-window{
