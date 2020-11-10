@@ -3,51 +3,26 @@
 CalsotChat is an open source tool that lets you securely and anonymously 
 chat with friends using the Tor network.
 
-## How to contribute
-- Install python requirements:
+## Project setup
 ```
+yarn install
 pip install -r requirements
 ```
 
-- Start python main script:
+### Compiles and hot-reloads for development
+shell 1:
 ```
 python main.py
 ```
 
-## How to create a package
-- Build python package using pyinstaller
-```
-pyinstaller main.spec
-```
-
-This command will create a new build in ./dist folder and then you can 
-execute python script using the following command:
-```
-dist/clasotchat/calsotchat
-```
-
-
-
-=============================
-
-# Vue
-
-
-# calsotchat
-
-## Project setup
-```
-yarn install
-```
-
-### Compiles and hot-reloads for development
+shell 2:
 ```
 yarn serve
 ```
 
 ### Compiles and minifies for production
 ```
-yarn build
+pyinstaller main.spec && yarn build
 ```
 
 ### Lints and fixes files
@@ -59,18 +34,31 @@ yarn lint
 See [Configuration Reference](https://cli.vuejs.org/config/).
 
 
-# Electron
+## Electron
 
-## Start develop server
+### Start develop server
+shell 1:
+```
+python main.py
+```
+
+shell 2:
 ```
 yarn electron:serve
 or
 npm run electron:serve
 ```
 
-## Build app
+### Build app
 ```
-yarn electron:build
+pyinstaller main.spec && yarn electron:build
 or
-npm run electron:build
+pyinstaller main.spec && npm run electron:build
 ```
+
+# TODO List
+
+- [ ] Chat in groups with multiple members
+- [ ] Static Tor address
+- [ ] Edit contact names
+- [ ] Make ports dynamics

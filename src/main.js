@@ -23,14 +23,20 @@ Vue.use(Vuesax, {
   }
 })
 
+process.argv.forEach((val, index) => {
+  console.log(`${index}: ${val}`);
+});
+
 Vue.use(new VueSocketIO({
   debug: true,
-  connection: 'http://127.0.0.1:5000/internal'
+  connection: process.env.VUE_APP_API_URL + '/internal'
 }));
 
 Vue.config.productionTip = false
 
 Vue.use(VueAxios, axios)
+
+Vue.axios.defaults.baseURL = process.env.VUE_APP_API_URL;
 
 new Vue({
   render: h => h(App),

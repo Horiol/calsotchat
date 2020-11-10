@@ -59,7 +59,7 @@ async function createWindow() {
       nodeIntegration: process.env.ELECTRON_NODE_INTEGRATION
     }
   })
-
+  
   if (process.env.WEBPACK_DEV_SERVER_URL) {
     // Load the url of the dev server if in development mode
     await win.loadURL(process.env.WEBPACK_DEV_SERVER_URL)
@@ -69,6 +69,7 @@ async function createWindow() {
     // Load the index.html when not in development
     win.loadURL('app://./index.html')
   }
+  loadingwindow.close()
 }
 
 // Quit when all windows are closed.
@@ -119,9 +120,13 @@ app.on('ready', async () => {
       console.error('Vue Devtools failed to install:', e.toString())
     }
   }
-  startPythonSubprocess()
-  setTimeout(() => {  createWindow() }, 2000); // wait until python process starts
-  // createWindow()
+
+  if(isDevelopment){
+    createWindow()
+  }else{
+    startPythonSubprocess()
+    setTimeout(() => {  createWindow() }, 2000); // wait until python process starts
+  }
 })
 
 // Exit cleanly on request from parent process in development mode.

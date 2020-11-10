@@ -86,14 +86,17 @@ export default {
   },
   sockets: {
     newMessage: function (data) {
+      var address_array = this.room.members.map(member => member.address);
+      if (address_array.indexOf(data.sender_address) > -1){
         this.messages.push(data)
+      }
     }
   },
   watch:{
     room: function(){
       if (this.room !== null){
         this.axios
-          .get('http://localhost:5000/api/rooms/' + this.room.hash + "/messages/")
+          .get('/rooms/' + this.room.hash + "/messages/")
           .then((response) => {
             this.messages = response.data.reverse()
           })

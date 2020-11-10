@@ -7,7 +7,7 @@ from eventlet.hubs import epolls, kqueue, selects
 from dns import dnssec, e164, hash, namedict, tsigkeyring, update, version, zone
 
 from backend.tor import Tor
-from backend.api import Api
+from backend.api import MainApi
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -21,7 +21,7 @@ def main(onion_port, port):
     route = tor_service.start_service(onion_port, port)
     logging.info(f"Onion service started and listening in {route}")
     
-    flask_api = Api(route)
+    flask_api = MainApi(route)
     # Start API service in new thread
     thread = threading.Thread(target=flask_api.start, args=(port,))
     thread.daemon = True

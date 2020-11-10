@@ -8,12 +8,10 @@ from flask import Flask, request
 from flask_cors import CORS
 from flask_socketio import SocketIO
 from flask_restx import Api
-from db import db
 
-# from backend.api_routes_v1 import blueprint
-# from backend.models import Message, Contact, Room
-from api_namespace import api as namespace_api
-from models import Message, Contact, Room, MessageStatus
+from backend.db import db
+from backend.api_namespace import api as namespace_api
+from backend.models import Message, Contact, Room, MessageStatus
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -132,17 +130,26 @@ class MainApi():
             message.save()
 
             receivers = Room.query.filter_by(hash=content['room_hash']).first().members
+            some_failed = False
             for receiver in receivers: # TODO: review and make it more asyncronous
                 if receiver.address != self.origin:
-                    onion_session.post(
-                        f'http://{receiver["address"]}/api_internal/new_message/', 
-                        data=json.dumps(message.to_json()),
-                        headers=json_headers
-                    )
-                    logging.info(f"Message {message.id} sent to {receiver.name}")
+                    try:
+                        onion_session.post(
+                            f'http://{receiver.address}/api_internal/new_message/', 
+                            data=json.dumps(message.to_json()),
+                            headers=json_headers
+                        )
+                        logging.info(f"Message {message.id} sent to {receiver.name}")
+                    except ConnectionError:
+                        some_failed = True
+                        logging.warning(f"Message can not be sent to {receiver.name}")
+                    except Exception as e:
+                        some_failed = True
+                        logging.exception(e)
             
-            message.status = MessageStatus.DISPATCHED
-            message.save()
+            if not some_failed:
+                message.status = MessageStatus.DISPATCHED
+                message.save()
 
     def start(self, port=5000, dev=False):
         """

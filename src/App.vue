@@ -1,7 +1,8 @@
 <template>
   <div id="app">
-    <nav-bar :own_route="myself.address"/>
+    <nav-bar :own_route="myself.address" />
     <contacts-list 
+      :myself="myself"
       v-on:input="userSelected" 
       :contacts="contacts"
       @new-contact="addContact"
@@ -67,9 +68,9 @@ export default {
     this.loading = this.$vs.loading()
     this.axios.all([
       this.axios
-        .get('http://localhost:5000/api/myself/'),
+        .get('/myself/'),
       this.axios
-        .get('http://localhost:5000/api/rooms/')
+        .get('/rooms/')
     ])
     .then(this.axios.spread((first_response, second_response) => {
       this.myself = first_response.data
@@ -91,7 +92,7 @@ export default {
     },
     saveNickname: function(){
       this.axios
-        .put('http://localhost:5000/api/contacts/'+this.myself.id+'/', {
+        .put('/contacts/'+this.myself.id+'/', {
           "name": this.new_nickname,
           "nickname": this.new_nickname,
           "address": this.myself.address
@@ -102,7 +103,7 @@ export default {
   //   statusResponse: function(data) {
   //     this.own_route = data.own_route
   //     this.axios
-  //       .get('http://localhost:5000/api/contacts/')
+  //       .get('/contacts/')
   //       .then(response => {
   //         this.contacts = response.data
   //     })

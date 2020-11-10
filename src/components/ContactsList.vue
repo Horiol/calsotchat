@@ -21,6 +21,9 @@
             </vs-sidebar-item>
 
             <vs-sidebar-item v-for="contact in contacts" :id="contact.hash" :key="contact.hash">
+                <span v-if="contact.hash == myself.address">
+                    (You)
+                </span>
                 {{contact.name}}
             </vs-sidebar-item>
         </vs-sidebar>
@@ -64,7 +67,8 @@
 export default {
     name:"ContactsList",
     props:{
-        contacts:Array
+        contacts:Array,
+        myself: Object,
     },
     data:() => ({
         new_contact_dialog:false,

@@ -7,8 +7,8 @@ from werkzeug.exceptions import BadRequest, InternalServerError, NotFound, Confl
 
 from flask_cors import CORS
 
-from models import Message, Contact, Room, MessageStatus
-from db import db
+from backend.models import Message, Contact, Room, MessageStatus
+from backend.db import db
 
 api = Namespace('Api', description='')
 

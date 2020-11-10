@@ -2,8 +2,7 @@ import enum
 from datetime import datetime
 from dataclasses import dataclass
 
-# from backend.api import db
-from db import db
+from backend.db import db
 
 rooms_contacts_association = db.Table('rooms_contacts_association',
     db.Column('room_id', db.Integer, db.ForeignKey('room.id'), primary_key=True),
