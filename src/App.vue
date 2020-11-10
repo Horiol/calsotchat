@@ -15,7 +15,7 @@
       </vs-row>
     </div>
 
-    <vs-dialog not-close v-model="haveNickname">
+    <vs-dialog not-close v-model="notHaveNickname">
             <template #header>
                 <h4 class="not-margin">
                     Write your Nickname
@@ -55,6 +55,7 @@ export default {
     NavBar
   },
   data:() => ({
+    notHaveNickname: false,
     myself:{
       address:null,
       nickname:null
@@ -74,14 +75,13 @@ export default {
     ])
     .then(this.axios.spread((first_response, second_response) => {
       this.myself = first_response.data
+      if (this.myself.nickname == ""){
+        this.notHaveNickname = true
+      }
+
       this.contacts = second_response.data
       this.loading.close()
     }))
-  },
-  computed:{
-    haveNickname: function(){
-      return this.myself.nickname == ""
-    }
   },
   methods:{
     addContact: function(contact){
@@ -96,6 +96,10 @@ export default {
           "name": this.new_nickname,
           "nickname": this.new_nickname,
           "address": this.myself.address
+        })
+        .then((response) => {
+          this.myself = response.data
+          this.notHaveNickname = false
         })
     }
   },

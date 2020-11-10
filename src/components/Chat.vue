@@ -4,7 +4,14 @@
       <h3>Select a contact to start a chat</h3>
     </vs-row>
     <div class="hidden" v-else>
-      <vs-row><h2>{{room.name}}</h2></vs-row>
+      <vs-row>
+        <h2>
+          <span v-if="room.hash == myself.address">
+            (You)
+          </span>
+          {{room.name}}
+        </h2>
+      </vs-row>
       <vs-row justify="center" align="center">
         <vs-col w="11">
           <div class="con-form">

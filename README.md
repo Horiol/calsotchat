@@ -59,6 +59,6 @@ pyinstaller main.spec && npm run electron:build
 # TODO List
 
 - [ ] Chat in groups with multiple members
-- [ ] Static Tor address
+- [x] Static Tor address
 - [ ] Edit contact names
 - [ ] Make ports dynamics
