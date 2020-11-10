@@ -31,7 +31,7 @@ class Tor():
             self.controller.authenticate()
 
             if key_file:
-                key_path = os.path.expanduser(f'./{key_file}')
+                key_path = os.path.expanduser(f'~/calsotchat/{key_file}')
 
                 ### If file does not exist create it and use it to create an onion hidden service
                 if not os.path.exists(key_path):

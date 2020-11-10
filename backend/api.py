@@ -2,6 +2,7 @@ import requests
 from requests.exceptions import ConnectionError
 import logging
 import json
+import os
 import time
 
 from flask import Flask, request
@@ -32,7 +33,9 @@ onion_session.proxies = {
 def create_app(address):
     app = Flask(__name__)
     
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///calsotchat.sqlite'
+    db_path = os.path.expanduser(f'~/calsotchat/calsotchat.sqlite')
+    logging.warning(f'sqlite:///{db_path}')
+    app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     cors = CORS(app, resources={r"/api*": {"origins": "*"}})
 

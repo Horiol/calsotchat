@@ -16,6 +16,11 @@ logging.basicConfig(
 )
 
 def main(**kwargs):
+    main_folder = os.path.expanduser(f'~/calsotchat')
+    if not os.path.exists(main_folder):
+        os.makedirs(main_folder)
+        logging.info(f"Data directory created at {main_folder}")
+
     logging.info("Starting services...")
     
     tor_service = Tor()
