@@ -161,3 +161,4 @@ pnpm-debug.log*
 dist_python/
 
 backend/calsotchat\.sqlite
+*.key

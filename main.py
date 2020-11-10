@@ -60,7 +60,7 @@ if __name__ == "__main__":
     parser.add_argument(
         '--file', 
         type=str,
-        default='my_service_key',
+        default='my_service.key',
         dest='key_file',
         help='file name that saves the key to create a service with the same onion address (default: my_service_key)'
     )
