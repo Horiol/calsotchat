@@ -8,7 +8,7 @@ const { ipcMain } = require('electron')
 
 const path = require("path");
 const isDevelopment = process.env.NODE_ENV !== 'production'
-const PY_DIST_FOLDER = "../dist_python"
+const PY_DIST_FOLDER = "../dist"
 const PY_MODULE = "main"
 let subpy = null;
 var loadingwindow = null
@@ -23,14 +23,7 @@ protocol.registerSchemesAsPrivileged([
   { scheme: 'app', privileges: { secure: true, standard: true } }
 ])
 
-const isRunningInBundle = () => {
-  return require("fs").existsSync(path.join(__dirname, PY_DIST_FOLDER));
-};
-
 const getPythonScriptPath = () => {
-  if (!isRunningInBundle()) {
-    return path.join(__dirname, PY_MODULE + ".py");
-  }
   if (process.platform === "win32") {
     return path.join(
       __dirname,
@@ -43,11 +36,7 @@ const getPythonScriptPath = () => {
 
 const startPythonSubprocess = () => {
   let script = getPythonScriptPath();
-  if (isRunningInBundle()) { // TODO
-    subpy = require("child_process").execFile(script, ["--port", port, "--onion-port", onion_port, "--folder", folder]);
-  } else {
-    subpy = require("child_process").spawn("python", [script, "--port", port, "--onion-port", onion_port, "--folder", folder]);
-  }
+  subpy = require("child_process").execFile(script, ["--port", port, "--onion-port", onion_port, "--folder", folder]);
 };
 
 async function createWindow() {
@@ -75,7 +64,7 @@ async function createWindow() {
     await win.loadURL(process.env.WEBPACK_DEV_SERVER_URL)
     if (!process.env.IS_TEST) win.webContents.openDevTools()
   } else {
-    win.webContents.openDevTools()
+    // win.webContents.openDevTools()
     createProtocol('app')
     // Load the index.html when not in development
     win.loadURL('app://./index.html')
@@ -134,11 +123,9 @@ app.on('ready', async () => {
 
   if(isDevelopment){
     createWindow()
-    // startPythonSubprocess()
-    // setTimeout(() => {  createWindow() }, 2000); // wait until python process starts
   }else{
     startPythonSubprocess()
-    setTimeout(() => {  createWindow() }, 2000); // wait until python process starts
+    setTimeout(() => {  createWindow() }, 3000); // wait until python process starts (TODO: make loading more precise)
   }
 })
 
@@ -159,6 +146,5 @@ if (isDevelopment) {
 
 ipcMain.on('get-api-url', (event) => {
   const result = "http://localhost:" + port + "/api"
-  console.log(result);
   event.returnValue = result
 })
