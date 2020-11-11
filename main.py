@@ -16,7 +16,7 @@ logging.basicConfig(
 )
 
 def main(**kwargs):
-    main_folder = os.path.expanduser(f'~/calsotchat')
+    main_folder = os.path.expanduser(kwargs['data_folder'])
     if not os.path.exists(main_folder):
         os.makedirs(main_folder)
         logging.info(f"Data directory created at {main_folder}")
@@ -27,7 +27,7 @@ def main(**kwargs):
     route = tor_service.start_service(**kwargs)
     # logging.info(f"Onion service started and listening in {route}")
     
-    flask_api = MainApi(route)
+    flask_api = MainApi(route, **kwargs)
     # Start API service in new thread
     thread = threading.Thread(target=flask_api.start, args=(kwargs['port'],))
     thread.daemon = True
@@ -63,11 +63,12 @@ if __name__ == "__main__":
         help='port to bind onion hidden service (default: 80)'
     )
     parser.add_argument(
-        '--file', 
+        '--folder', 
         type=str,
-        default='my_service.key',
-        dest='key_file',
-        help='file name that saves the key to create a service with the same onion address (default: my_service_key)'
+        default='~/calsotchat',
+        dest='data_folder',
+        help='Directory to save data between executions (default: ~/calsotchat)'
     )
     args = parser.parse_args()
+    logging.info(f"args: {args.__dict__}")
     main(**args.__dict__)

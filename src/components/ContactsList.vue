@@ -116,14 +116,14 @@ export default {
             if (this.validAddress){
                 this.loading_dialog = true
                 this.axios
-                .post('http://localhost:5000/api/contacts/', {
+                .post('/contacts/', {
                     "name": this.new_contact.name,
                     "nickname": this.new_contact.name,
                     "address": this.new_contact.address
                 })
                 .then(response => {
                     this.axios
-                    .get('http://localhost:5000/api/rooms/' + response.data.address + "/")
+                    .get('/rooms/' + response.data.address + "/")
                     .then(response => {
                         this.$emit('new-contact', response.data)
                         this.loading_dialog = false
@@ -138,12 +138,7 @@ export default {
             })[0]
             this.$emit('input', room)
         }
-    },
-    // sockets: {
-    //     contactList: function(data) {
-    //         this.contacts = data
-    //     }
-    // }
+    }
 }
 </script>
 

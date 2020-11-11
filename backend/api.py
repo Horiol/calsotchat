@@ -8,11 +8,11 @@ import time
 from flask import Flask, request
 from flask_cors import CORS
 from flask_socketio import SocketIO
-from flask_restx import Api
+from flask_restx import Api, marshal
 
 from backend.db import db
-from backend.api_namespace import api as namespace_api
-from backend.models import Message, Contact, Room, MessageStatus
+from backend.api_namespace import api as namespace_api, message_model, contact_model, room_model
+from backend.models import Message, Contact, Room
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -30,10 +30,10 @@ onion_session.proxies = {
     'https': f'socks5h://127.0.0.1:9050'
 }
 
-def create_app(address):
+def create_app(address, **kwargs):
     app = Flask(__name__)
     
-    db_path = os.path.expanduser(f'~/calsotchat/calsotchat.sqlite')
+    db_path = os.path.expanduser(kwargs['data_folder'] + '/calsotchat.sqlite')
     logging.warning(f'sqlite:///{db_path}')
     app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -64,10 +64,10 @@ class MainApi():
     API server powered by Flask
     """
 
-    def __init__(self, origin):
+    def __init__(self, origin, **kwargs):
         self.running = False
         self.port = None
-        self.app = create_app(origin)
+        self.app = create_app(origin, **kwargs)
         self.api = api = Api(self.app, version='1.0', title='TodoMVC API',
             description='A simple TodoMVC API',
             doc=False
@@ -94,11 +94,15 @@ class MainApi():
         @self.app.route("/api/myself/")
         def myself():
             me = Contact.query.filter_by(address=self.origin).first()
-            return me.to_json()
+            return marshal(me, contact_model)
 
+        @self.api.expect(message_model, validate=True)
         @self.app.route('/api_internal/new_message/', methods=['POST'])
         def new_message():
-            content = request.json
+            content = self.api.payload
+            del content['id']
+            del content['sender']
+            del content['timestamp']
 
             sender = Contact.query.filter_by(address=content['sender_address']).first()
             if not sender:
@@ -108,17 +112,26 @@ class MainApi():
                     address=content['sender_address'],
                     online=True
                 )
-                sender.save()
+                room = sender.save()
+
+                # Emit new contact event
+                self.socketio.emit('newContact', marshal(room, room_model), namespace="/api/internal")
             logging.info(f"Message received from {sender.name}")
 
-            message = Message()
-            message.from_json(content)
+            message = Message(**content)
+            # message.status = MessageStatus.RECEIVED
+            logging.info(message)
+            logging.info(content)
+
+            if message.room_hash == self.origin: # Direct message to me -> overwrite the room_hash
+                message.room_hash = content['sender_address']
+
             message.save()
 
-            self.socketio.emit('newMessage', message.to_json(), namespace="/internal")
+            self.socketio.emit('newMessage', marshal(message, message_model), namespace="/api/internal")
             return {"message": "received"}
 
-        @self.socketio.on('send-message', namespace='/internal')
+        @self.socketio.on('send-message', namespace="/api/internal")
         def handleMessage(content):
             me = Contact.query.filter_by(address=self.origin).first()
 
@@ -127,19 +140,21 @@ class MainApi():
                 sender_nickname=me.nickname,
                 room_hash=content['room_hash'],
                 msg=content['msg'],
-                status=MessageStatus.QUEUED,
+                # status=MessageStatus.QUEUED,
 
             )
             message.save()
 
             receivers = Room.query.filter_by(hash=content['room_hash']).first().members
             some_failed = False
+
+            message_json = marshal(message, message_model)
             for receiver in receivers: # TODO: review and make it more asyncronous
                 if receiver.address != self.origin:
                     try:
                         onion_session.post(
                             f'http://{receiver.address}/api_internal/new_message/', 
-                            data=json.dumps(message.to_json()),
+                            data=json.dumps(message_json),
                             headers=json_headers
                         )
                         logging.info(f"Message {message.id} sent to {receiver.name}")
@@ -150,9 +165,9 @@ class MainApi():
                         some_failed = True
                         logging.exception(e)
             
-            if not some_failed:
-                message.status = MessageStatus.DISPATCHED
-                message.save()
+            # if not some_failed:
+            #     message.status = MessageStatus.DISPATCHED
+            #     message.save()
 
     def start(self, port=5000, dev=False):
         """

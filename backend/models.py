@@ -41,16 +41,8 @@ class Contact(db.Model):
     nickname = db.Column(db.String, nullable=False)
     online = db.Column(db.Boolean, default=False)
 
-    def to_json(self):
-        json_data = {
-            'name':self.name,
-            'nickname':self.nickname,
-            'address':self.address,
-            'id':self.id,
-        }
-        return json_data
-
     def save(self):
+        private_room = None
         if not self.id:
             db.session.add(self)
             # Create a room to talk only with this person
@@ -63,6 +55,8 @@ class Contact(db.Model):
             private_room.members.append(self)
 
         db.session.commit()
+
+        return private_room
 
     def delete(self):
         db.session.delete(self)
@@ -77,11 +71,11 @@ class Contact(db.Model):
         private_room = Room.query.filter_by(hash=self.address).first()
         private_room.update(name=self.name)
 
-class MessageStatus(enum.Enum):
-    READ = 'READ'
-    RECEIVED = 'RECEIVED'
-    DISPATCHED = 'DISPATCHED'
-    QUEUED = 'QUEUED'
+# class MessageStatus(enum.Enum):
+#     READ = 'READ'
+#     RECEIVED = 'RECEIVED'
+#     DISPATCHED = 'DISPATCHED'
+#     QUEUED = 'QUEUED'
 
 class Message(db.Model):
     __tablename__ = 'message'
@@ -90,7 +84,7 @@ class Message(db.Model):
     sender_nickname = db.Column(db.String, nullable=False)
     room_hash = db.Column(db.String, db.ForeignKey('room.hash'))
     msg = db.Column(db.String, nullable=False)
-    status = db.Column(db.Enum(MessageStatus), nullable=False)
+    # status = db.Column(db.Enum(MessageStatus), nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
     sender = db.relationship("Contact")
@@ -103,20 +97,3 @@ class Message(db.Model):
     def delete(self):
         db.session.delete(self)
         db.session.commit()
-
-    def to_json(self):
-        json_data = {
-            'msg':self.msg,
-            'room_hash':self.room_hash,
-            'sender_address':self.sender_address,
-            'sender_nickname':self.sender_nickname,
-        }
-        return json_data
-
-    
-    def from_json(self, json_data):
-        self.msg = json_data['msg']
-        self.room_hash = json_data['room_hash']
-        self.sender_address = json_data['sender_address']
-        self.sender_nickname = json_data['sender_nickname']
-        self.status = MessageStatus.RECEIVED

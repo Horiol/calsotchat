@@ -24,7 +24,7 @@
 
 
         <div class="con-form">
-            <vs-input v-model="new_nickname" label-placeholder="Nickname">
+            <vs-input v-model="new_nickname" label-placeholder="Nickname" @keyup.enter="saveNickname">
                 <template #icon>
                     <i class='bx bxs-user' ></i>
                 </template>
@@ -66,53 +66,48 @@ export default {
     loading: null
   }),
   mounted: function(){
-    this.loading = this.$vs.loading()
-    this.axios.all([
-      this.axios
-        .get('/myself/'),
-      this.axios
-        .get('/rooms/')
-    ])
-    .then(this.axios.spread((first_response, second_response) => {
-      this.myself = first_response.data
-      if (this.myself.nickname == ""){
-        this.notHaveNickname = true
-      }
-
-      this.contacts = second_response.data
-      this.loading.close()
-    }))
+    this.mainLoad()
   },
   methods:{
-    addContact: function(contact){
-      this.contacts.push(contact)
+    mainLoad: function(){
+      this.loading = this.$vs.loading()
+      this.axios.all([
+        this.axios
+          .get('/myself/'),
+        this.axios
+          .get('/rooms/')
+      ])
+      .then(this.axios.spread((first_response, second_response) => {
+        this.myself = first_response.data
+        this.notHaveNickname = (this.myself.nickname == "")
+
+        this.contacts = second_response.data
+        this.loading.close()
+      }))
+    },
+    addContact: function(room){
+      this.contacts.push(room)
     },
     userSelected: function(room){
       this.selected_contact = room
     },
     saveNickname: function(){
       this.axios
-        .put('/contacts/'+this.myself.id+'/', {
+        .put('/contacts/'+this.myself.address+'/', {
           "name": this.new_nickname,
           "nickname": this.new_nickname,
           "address": this.myself.address
         })
-        .then((response) => {
-          this.myself = response.data
-          this.notHaveNickname = false
+        .then((_response) => {
+          this.mainLoad()
         })
     }
   },
-  // sockets: {
-  //   statusResponse: function(data) {
-  //     this.own_route = data.own_route
-  //     this.axios
-  //       .get('/contacts/')
-  //       .then(response => {
-  //         this.contacts = response.data
-  //     })
-  //   }
-  // }
+  sockets: {
+    newContact: function (data) {
+      this.contacts.push(data)
+    }
+  }
 }
 </script>
 

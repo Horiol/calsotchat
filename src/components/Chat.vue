@@ -84,7 +84,7 @@ export default {
       }
     },
     check_message_origin: function(message){
-      if (message.sender.id == this.myself.id){
+      if (message.sender.address == this.myself.address){
         return 'flex-end'
       } else {
         return 'flex-start'
@@ -93,9 +93,11 @@ export default {
   },
   sockets: {
     newMessage: function (data) {
-      var address_array = this.room.members.map(member => member.address);
-      if (address_array.indexOf(data.sender_address) > -1){
-        this.messages.push(data)
+      if (this.room !== null){
+        var address_array = this.room.members.map(member => member.address);
+        if (address_array.indexOf(data.sender_address) > -1){ // TODO: Improve this function when adding groups feature
+          this.messages.push(data)
+        }
       }
     }
   },

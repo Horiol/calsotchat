@@ -7,7 +7,7 @@ from werkzeug.exceptions import BadRequest, InternalServerError, NotFound, Confl
 
 from flask_cors import CORS
 
-from backend.models import Message, Contact, Room, MessageStatus
+from backend.models import Message, Contact, Room
 from backend.db import db
 
 api = Namespace('Api', description='')
@@ -37,7 +37,7 @@ message_model = api.model('Message', {
     'sender_nickname': fields.String(),
     'room_hash': fields.String(),
     'msg': fields.String(),
-    'status': fields.String(enum=['READ', 'RECEIVED', 'DISPATCHED', 'QUEUED'], readonly=True),
+    # 'status': fields.String(enum=['READ', 'RECEIVED', 'DISPATCHED', 'QUEUED'], readonly=True),
     'timestamp': fields.DateTime(readonly=True),
     'sender': fields.Nested(contact_model, readonly=True),
     # 'room': fields.Nested(room_model, readonly=True),
@@ -63,23 +63,23 @@ class ContactResource(Resource):
 
         return contact
 
-@api.route(f'/{contacts_ns}/<int:id>/')
+@api.route(f'/{contacts_ns}/<string:address>/')
 class ContactInstanceResource(Resource):
     @api.marshal_with(contact_model)
-    def get(self, id):
-        return Contact.query.get(id)
+    def get(self, address):
+        return Contact.query.filter_by(address=address).first()
 
     @api.response(204, 'Item deleted')
-    def delete(self, id):
-        contact = Contact.query.get(id)
+    def delete(self, address):
+        contact = Contact.query.filter_by(address=address).first()
         if contact:
             contact.delete()
         return '', 204
 
     @api.expect(contact_model, validate=True)
     @api.marshal_with(contact_model)
-    def put(self, id):
-        contact = Contact.query.get(id)
+    def put(self, address):
+        contact = Contact.query.filter_by(address=address).first()
         if not contact:
             raise NotFound()
 

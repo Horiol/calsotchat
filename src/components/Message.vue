@@ -23,14 +23,14 @@ export default {
     },
     computed:{
         isMine(){
-            if (this.message.sender.id == this.myself.id){
+            if (this.message.sender.address == this.myself.address){
                 return true
             } else {
                 return false
             }
         },
         color: function(){
-            if (this.message.sender.id == this.myself.id){
+            if (this.message.sender.address == this.myself.address){
                 return "success"
             } else {
                 return 'primary'

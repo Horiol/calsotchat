@@ -4,6 +4,7 @@ import axios from 'axios'
 import VueAxios from 'vue-axios'
 import VueSocketIO from 'vue-socket.io';
 import Vuesax from 'vuesax'
+import { ipcRenderer } from 'electron'
 
 import 'vuesax/dist/vuesax.css' 
 import './assets/css/boxicons.min.css'
@@ -23,20 +24,22 @@ Vue.use(Vuesax, {
   }
 })
 
-process.argv.forEach((val, index) => {
-  console.log(`${index}: ${val}`);
-});
-
-Vue.use(new VueSocketIO({
-  debug: true,
-  connection: process.env.VUE_APP_API_URL + '/internal'
-}));
-
-Vue.config.productionTip = false
+Vue.config.productionTip = (process.env.NODE_ENV == "production")
 
 Vue.use(VueAxios, axios)
 
-Vue.axios.defaults.baseURL = process.env.VUE_APP_API_URL;
+var url = "http://localhost:5000/api"
+if (process.env.IS_ELECTRON){
+  url = ipcRenderer.sendSync('get-api-url')
+}else{
+  console.log("TODO");
+}
+Vue.axios.defaults.baseURL = url;
+
+Vue.use(new VueSocketIO({
+  debug: !(process.env.NODE_ENV == "production"),
+  connection: url + '/internal'
+}));
 
 new Vue({
   render: h => h(App),

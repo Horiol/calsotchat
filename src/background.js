@@ -4,12 +4,19 @@ import { app, protocol, BrowserWindow } from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
 
+const { ipcMain } = require('electron')
+
 const path = require("path");
 const isDevelopment = process.env.NODE_ENV !== 'production'
 const PY_DIST_FOLDER = "../dist_python"
 const PY_MODULE = "main"
 let subpy = null;
 var loadingwindow = null
+
+// Get command options
+var port = (app.commandLine.getSwitchValue("port") || "5000")
+var onion_port = (app.commandLine.getSwitchValue("onion_port") || "80")
+var folder = (app.commandLine.getSwitchValue("folder") || "~/calsotchat")
 
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([
@@ -36,19 +43,22 @@ const getPythonScriptPath = () => {
 
 const startPythonSubprocess = () => {
   let script = getPythonScriptPath();
-  console.log(script);
   if (isRunningInBundle()) { // TODO
-    subpy = require("child_process").execFile(script, []);
+    subpy = require("child_process").execFile(script, ["--port", port, "--onion-port", onion_port, "--folder", folder]);
   } else {
-    subpy = require("child_process").spawn("python", [script]);
+    subpy = require("child_process").spawn("python", [script, "--port", port, "--onion-port", onion_port, "--folder", folder]);
   }
 };
 
 async function createWindow() {
+  var default_width = 800;
+  if (isDevelopment && !process.env.IS_TEST) {
+    default_width = 1200
+  }
   // Create the browser window.
   loadingwindow.hide()
   const win = new BrowserWindow({
-    width: 800,
+    width: default_width,
     height: 600,
     'minHeight': 600,
     'minWidth': 750,
@@ -65,6 +75,7 @@ async function createWindow() {
     await win.loadURL(process.env.WEBPACK_DEV_SERVER_URL)
     if (!process.env.IS_TEST) win.webContents.openDevTools()
   } else {
+    win.webContents.openDevTools()
     createProtocol('app')
     // Load the index.html when not in development
     win.loadURL('app://./index.html')
@@ -123,6 +134,8 @@ app.on('ready', async () => {
 
   if(isDevelopment){
     createWindow()
+    // startPythonSubprocess()
+    // setTimeout(() => {  createWindow() }, 2000); // wait until python process starts
   }else{
     startPythonSubprocess()
     setTimeout(() => {  createWindow() }, 2000); // wait until python process starts
@@ -143,3 +156,9 @@ if (isDevelopment) {
     })
   }
 }
+
+ipcMain.on('get-api-url', (event) => {
+  const result = "http://localhost:" + port + "/api"
+  console.log(result);
+  event.returnValue = result
+})
