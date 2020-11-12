@@ -4,7 +4,7 @@ import axios from 'axios'
 import VueAxios from 'vue-axios'
 import VueSocketIO from 'vue-socket.io';
 import Vuesax from 'vuesax'
-import { ipcRenderer } from 'electron'
+// import { ipcRenderer } from 'electron'
 
 import 'vuesax/dist/vuesax.css' 
 import './assets/css/boxicons.min.css'
@@ -30,7 +30,7 @@ Vue.use(VueAxios, axios)
 
 var url = "http://localhost:5000/api"
 if (process.env.IS_ELECTRON){
-  url = ipcRenderer.sendSync('get-api-url')
+  // url = ipcRenderer.sendSync('get-api-url')
 }else{
   console.log("TODO");
 }

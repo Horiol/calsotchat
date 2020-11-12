@@ -66,11 +66,11 @@ export default {
     loading: null
   }),
   mounted: function(){
+    this.loading = this.$vs.loading()
     this.mainLoad()
   },
   methods:{
     mainLoad: function(){
-      this.loading = this.$vs.loading()
       this.axios.all([
         this.axios
           .get('/myself/'),
@@ -84,6 +84,14 @@ export default {
         this.contacts = second_response.data
         this.loading.close()
       }))
+      .catch(error => {
+        console.log(error);
+        var th = this
+        setTimeout(
+          function() {th.mainLoad()},
+          1000
+        )
+      })
     },
     addContact: function(room){
       this.contacts.push(room)
@@ -99,6 +107,7 @@ export default {
           "address": this.myself.address
         })
         .then((_response) => {
+          this.loading = this.$vs.loading()
           this.mainLoad()
         })
     }

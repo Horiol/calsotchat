@@ -18,9 +18,8 @@ var port = (app.commandLine.getSwitchValue("port") || "5000")
 var onion_port = (app.commandLine.getSwitchValue("onion_port") || "80")
 var onion_control_port = (app.commandLine.getSwitchValue("onion_control_port") || "9051")
 var onion_socks_port = (app.commandLine.getSwitchValue("onion_socks_port") || "9050")
-var tor_browser = (app.commandLine.hasSwitch('tor_browser'))
 
-if (tor_browser) {
+if (app.commandLine.hasSwitch('tor_browser')) {
   onion_control_port = "9151"
   onion_socks_port = "9150"
 }
@@ -137,9 +136,9 @@ app.on('ready', async () => {
   }
 
   if(isDevelopment){
+    startPythonSubprocess()
     createWindow()
   }else{
-    startPythonSubprocess()
     setTimeout(() => {  createWindow() }, 3000); // wait until python process starts (TODO: make loading more precise)
   }
 })
