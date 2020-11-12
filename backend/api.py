@@ -15,8 +15,9 @@ from backend.api_namespace import api as namespace_api, message_model, contact_m
 from backend.models import Message, Contact, Room
 
 logging.basicConfig(
-    level=logging.DEBUG,
-    format='[%(levelname)-8s] (%(threadName)-10s) (%(filename)-10s:%(lineno)3d) %(message)s',
+    format='%(asctime)s [%(levelname)-8s] (%(filename)-10s:%(lineno)3d) (%(name)s) %(message)s', 
+    datefmt='%Y-%m-%d %H:%M:%S',
+    level=logging.DEBUG
 )
 
 json_headers = {
@@ -24,17 +25,12 @@ json_headers = {
 }
 
 ## Set proper proxies for .onion hostnames (Tor Network)
-onion_session = requests.session()
-onion_session.proxies = {
-    'http':  f'socks5h://127.0.0.1:9050', 
-    'https': f'socks5h://127.0.0.1:9050'
-}
 
 def create_app(address, **kwargs):
     app = Flask(__name__)
     
     db_path = os.path.expanduser(kwargs['data_folder'] + '/calsotchat.sqlite')
-    logging.warning(f'sqlite:///{db_path}')
+    logging.info(f'DB file -> sqlite:///{db_path}')
     app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     cors = CORS(app, resources={r"/api*": {"origins": "*"}})
@@ -65,10 +61,16 @@ class MainApi():
     """
 
     def __init__(self, origin, **kwargs):
+        self.onion_session = requests.session()
+        self.onion_session.proxies = {
+            'http':  f'socks5h://127.0.0.1:{kwargs["onion_socks_port"]}', 
+            'https': f'socks5h://127.0.0.1:{kwargs["onion_socks_port"]}'
+        }
+
         self.running = False
         self.port = None
         self.app = create_app(origin, **kwargs)
-        self.api = api = Api(self.app, version='1.0', title='TodoMVC API',
+        self.api = Api(self.app, version='1.0', title='TodoMVC API',
             description='A simple TodoMVC API',
             doc=False
         )
@@ -80,7 +82,13 @@ class MainApi():
 
         self._define_internal_routes()
 
+        logging.debug("MainApi class init finished")
+
     def _define_internal_routes(self):
+        @self.app.before_request
+        def before_func():
+            logging.info("Test")
+
         @self.app.route("/shutdown/")
         def shutdown():
             self.running = False
@@ -152,7 +160,7 @@ class MainApi():
             for receiver in receivers: # TODO: review and make it more asyncronous
                 if receiver.address != self.origin:
                     try:
-                        onion_session.post(
+                        self.onion_session.post(
                             f'http://{receiver.address}/api_internal/new_message/', 
                             data=json.dumps(message_json),
                             headers=json_headers

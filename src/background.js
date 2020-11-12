@@ -16,6 +16,15 @@ var loadingwindow = null
 // Get command options
 var port = (app.commandLine.getSwitchValue("port") || "5000")
 var onion_port = (app.commandLine.getSwitchValue("onion_port") || "80")
+var onion_control_port = (app.commandLine.getSwitchValue("onion_control_port") || "9051")
+var onion_socks_port = (app.commandLine.getSwitchValue("onion_socks_port") || "9050")
+var tor_browser = (app.commandLine.hasSwitch('tor_browser'))
+
+if (tor_browser) {
+  onion_control_port = "9151"
+  onion_socks_port = "9150"
+}
+
 var folder = (app.commandLine.getSwitchValue("folder") || "~/calsotchat")
 
 // Scheme must be registered before the app is ready
@@ -36,7 +45,13 @@ const getPythonScriptPath = () => {
 
 const startPythonSubprocess = () => {
   let script = getPythonScriptPath();
-  subpy = require("child_process").execFile(script, ["--port", port, "--onion-port", onion_port, "--folder", folder]);
+  subpy = require("child_process").execFile(script, [
+    "--port", port, 
+    "--onion-port", onion_port, 
+    "--folder", folder,
+    "--onion_control_port", onion_control_port,
+    "--onion_socks_port", onion_socks_port
+  ]);
 };
 
 async function createWindow() {

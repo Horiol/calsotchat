@@ -5,6 +5,12 @@ import logging
 
 from stem.control import Controller
 
+logging.basicConfig(
+    format='%(asctime)s [%(levelname)-8s] (%(filename)-10s:%(lineno)3d) (%(name)s) %(message)s', 
+    datefmt='%Y-%m-%d %H:%M:%S',
+    level=logging.DEBUG
+)
+
 class Tor():
     """
     Class created to group all the logic and workflow of onion hidden services

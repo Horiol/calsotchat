@@ -11,9 +11,11 @@ from backend.tor import Tor
 from backend.api import MainApi
 
 logging.basicConfig(
-    level=logging.DEBUG,
-    format='[%(levelname)-8s] (%(threadName)-10s) (%(filename)-10s:%(lineno)3d) %(message)s',
+    format='%(asctime)s [%(levelname)-8s] (%(filename)-10s:%(lineno)3d) (%(name)s) %(message)s', 
+    datefmt='%Y-%m-%d %H:%M:%S',
+    level=logging.DEBUG
 )
+logging.getLogger("engineio.server").setLevel(logging.WARNING)
 
 def main(**kwargs):
     main_folder = os.path.expanduser(kwargs['data_folder'])
@@ -21,11 +23,11 @@ def main(**kwargs):
         os.makedirs(main_folder)
         logging.info(f"Data directory created at {main_folder}")
 
+    logging.info(f"args: {args.__dict__}")
     logging.info("Starting services...")
     
     tor_service = Tor()
     route = tor_service.start_service(**kwargs)
-    # logging.info(f"Onion service started and listening in {route}")
     
     flask_api = MainApi(route, **kwargs)
     # Start API service in new thread
@@ -39,10 +41,13 @@ def main(**kwargs):
             time.sleep(24*60*60) # Wait 24h
         except KeyboardInterrupt:
             logging.info("Stopping services...")
+
             flask_api.stop()
             logging.debug("API stopped")
+
             tor_service.stop_service()
             logging.debug("Onion Service stopped")
+
             logging.info("Services stopped, bye")
             break
 
@@ -56,11 +61,25 @@ if __name__ == "__main__":
         help='local port to bind flask app (default: 5000)'
     )
     parser.add_argument(
-        '--onion-port', 
+        '--onion_port', 
         type=int,
         default=80,
         dest='onion_port',
         help='port to bind onion hidden service (default: 80)'
+    )
+    parser.add_argument(
+        '--onion_control_port', 
+        type=int,
+        default=9051,
+        dest='onion_control_port',
+        help='port to bind onion hidden service (default: 9051)'
+    )
+    parser.add_argument(
+        '--onion_socks_port', 
+        type=int,
+        default=9050,
+        dest='onion_socks_port',
+        help='port to bind onion hidden service (default: 9050)'
     )
     parser.add_argument(
         '--folder', 
@@ -70,5 +89,4 @@ if __name__ == "__main__":
         help='Directory to save data between executions (default: ~/calsotchat)'
     )
     args = parser.parse_args()
-    logging.info(f"args: {args.__dict__}")
     main(**args.__dict__)

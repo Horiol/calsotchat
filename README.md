@@ -64,6 +64,7 @@ pyinstaller main.spec && npm run electron:build
 - [ ] Chat in groups with multiple members
 - [x] Static Tor address
 - [ ] Edit contact names
+- [ ] Check contacts status (online/offline)
+- [ ] Resend failed messages when contaact reconnects
 - [ ] Write logs when running in Bundle
 - [x] Make ports dynamics
-- [ ] Trye with Tor browser control port (9151) if default port fails (9051)
