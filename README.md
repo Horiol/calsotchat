@@ -4,7 +4,9 @@ CalsotChat is an open source tool that lets you securely and anonymously
 chat with friends using the Tor network.
 
 ## Requirements
-* Python 3.7
+* Python3.7
+* Nodejs v12.19.0
+* Edit torrc file (default location in /etc/tor/) and set "CookieAuthentication 0"
 
 ## Project setup
 ```

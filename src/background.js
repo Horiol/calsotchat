@@ -11,7 +11,6 @@ const isDevelopment = process.env.NODE_ENV !== 'production'
 const PY_DIST_FOLDER = "../dist"
 const PY_MODULE = "main"
 let subpy = null;
-var loadingwindow = null
 
 // Get command options
 var port = (app.commandLine.getSwitchValue("port") || "5000")
@@ -22,6 +21,7 @@ var onion_socks_port = (app.commandLine.getSwitchValue("onion_socks_port") || "9
 if (app.commandLine.hasSwitch('tor_browser')) {
   onion_control_port = "9151"
   onion_socks_port = "9150"
+  onion_port = "8080"
 }
 
 var folder = (app.commandLine.getSwitchValue("folder") || "~/calsotchat")
@@ -44,9 +44,10 @@ const getPythonScriptPath = () => {
 
 const startPythonSubprocess = () => {
   let script = getPythonScriptPath();
+  console.log(script);
   subpy = require("child_process").execFile(script, [
     "--port", port, 
-    "--onion-port", onion_port, 
+    "--onion_port", onion_port, 
     "--folder", folder,
     "--onion_control_port", onion_control_port,
     "--onion_socks_port", onion_socks_port
@@ -59,7 +60,6 @@ async function createWindow() {
     default_width = 1200
   }
   // Create the browser window.
-  loadingwindow.hide()
   const win = new BrowserWindow({
     width: default_width,
     height: 600,
@@ -83,7 +83,6 @@ async function createWindow() {
     // Load the index.html when not in development
     win.loadURL('app://./index.html')
   }
-  loadingwindow.close()
 }
 
 // Quit when all windows are closed.
@@ -110,22 +109,6 @@ app.on('activate', () => {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.on('ready', async () => {
-  loadingwindow = new BrowserWindow({
-    frame : false,
-    width: 175,
-    height: 175,
-    movable : false,
-    icon: path.join(__static, 'icon.png')
-  })
-  if (process.env.WEBPACK_DEV_SERVER_URL) {
-    // Load the url of the dev server if in development mode
-    await loadingwindow.loadURL(process.env.WEBPACK_DEV_SERVER_URL+"/loading.html")
-  } else {
-    createProtocol('app')
-    // Load the index.html when not in development
-    loadingwindow.loadURL('app://./loading.html')
-  }
-
   if (isDevelopment && !process.env.IS_TEST) {
     // Install Vue Devtools
     try {
@@ -139,7 +122,8 @@ app.on('ready', async () => {
     startPythonSubprocess()
     createWindow()
   }else{
-    setTimeout(() => {  createWindow() }, 3000); // wait until python process starts (TODO: make loading more precise)
+    startPythonSubprocess()
+    createWindow()
   }
 })
 

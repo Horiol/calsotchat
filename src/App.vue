@@ -15,10 +15,10 @@
       </vs-row>
     </div>
 
-    <vs-dialog not-close v-model="notHaveNickname">
+    <vs-dialog not-close prevent-close v-model="notHaveNickname">
             <template #header>
                 <h4 class="not-margin">
-                    Write your Nickname
+                  Write your Nickname
                 </h4>
             </template>
 
@@ -26,7 +26,10 @@
         <div class="con-form">
             <vs-input v-model="new_nickname" label-placeholder="Nickname" @keyup.enter="saveNickname">
                 <template #icon>
-                    <i class='bx bxs-user' ></i>
+                  <i class='bx bxs-user' ></i>
+                </template>
+                <template v-if="!validNickname" #message-danger>
+                  Nickname not valid
                 </template>
             </vs-input>
         </div>
@@ -56,6 +59,7 @@ export default {
   },
   data:() => ({
     notHaveNickname: false,
+    validNickname: true,
     myself:{
       address:null,
       nickname:null
@@ -84,8 +88,7 @@ export default {
         this.contacts = second_response.data
         this.loading.close()
       }))
-      .catch(error => {
-        console.log(error);
+      .catch(_error => {
         var th = this
         setTimeout(
           function() {th.mainLoad()},
@@ -100,17 +103,21 @@ export default {
       this.selected_contact = room
     },
     saveNickname: function(){
-      this.axios
-        .put('/contacts/'+this.myself.address+'/', {
-          "name": this.new_nickname,
-          "nickname": this.new_nickname,
-          "address": this.myself.address
-        })
-        .then((_response) => {
-          this.loading = this.$vs.loading()
-          this.mainLoad()
-        })
-    }
+      if (this.new_nickname != ""){
+        this.axios
+          .put('/contacts/'+this.myself.address+'/', {
+            "name": this.new_nickname,
+            "nickname": this.new_nickname,
+            "address": this.myself.address
+          })
+          .then((_response) => {
+            this.loading = this.$vs.loading()
+            this.mainLoad()
+          })
+        }else{
+          this.validNickname = false
+        }
+      }
   },
   sockets: {
     newContact: function (data) {

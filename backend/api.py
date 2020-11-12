@@ -70,8 +70,10 @@ class MainApi():
         self.running = False
         self.port = None
         self.app = create_app(origin, **kwargs)
-        self.api = Api(self.app, version='1.0', title='TodoMVC API',
-            description='A simple TodoMVC API',
+        self.api = Api(
+            self.app, 
+            title='CalsotChat API',
+            description='',
             doc=False
         )
         self.api.add_namespace(namespace_api, path='/api')
@@ -87,7 +89,9 @@ class MainApi():
     def _define_internal_routes(self):
         @self.app.before_request
         def before_func():
-            logging.info("Test")
+            # TODO
+            # logging.info("Test")
+            pass
 
         @self.app.route("/shutdown/")
         def shutdown():
