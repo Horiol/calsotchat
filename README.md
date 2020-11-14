@@ -6,7 +6,29 @@ chat with friends using the Tor network.
 ## Requirements
 * Python3.7
 * Nodejs v12.19.0
-* Edit torrc file (default location in /etc/tor/) and set "CookieAuthentication 0"
+* Tor installed as a service
+
+### Install tor as a service
+* Ubuntu: https://help.ubuntu.com/community/Tor
+    * Edit torrc file (default location in /etc/tor/)
+        * Edit "CookieAuthentication" and set it to "0"
+        * Uncomment "SocksPort 9050"
+        * Uncomment "ControlPort 9051"
+* Windows:
+    * Download Windows Expert Bundle: https://www.torproject.org/download/tor/ 
+    * Create a torrc file with the following content:
+        ```
+        SocksPort 9050
+        ControlPort 9051
+        CookieAuthentication 0
+        ```
+    * Install tor service using torrc file
+        ```
+        .\tor.exe -f .\torrc
+        ```
+    * More info at https://miloserdov.org/?p=1839 
+
+
 
 ## Project setup
 ```
@@ -59,6 +81,17 @@ npm run electron:serve
 pyinstaller main.spec && yarn electron:build
 or
 pyinstaller main.spec && npm run electron:build
+```
+
+## Launch 2 instance in the same machine
+To be able to launch 2 instance of the app in the same machine we have to add some cmd arguments to start the app:
+* --port : local port that we will listen (default: 5000) 
+* --onion_port : port that will be listen in tor network interface (default: 80) 
+* --folder: local directory where save persistent data (default: ~/calsotchat)
+
+for example, to launch the second instance we will do the following in a cmd terminal:
+```
+./CalsotChat-0.1.0.AppImage --port=5010 --onion_port=8080 --folder=~/calsotchat2
 ```
 
 ## TODO List
