@@ -1,3 +1,4 @@
+from flask.signals import message_flashed
 import requests
 from requests.exceptions import ConnectionError
 import logging
@@ -13,7 +14,7 @@ from flask_restx import Api, marshal
 
 from backend.db import db
 from backend.api_namespace import api as namespace_api, message_model, contact_model, room_model
-from backend.models import Message, Contact, Room
+from backend.models import Message, Contact, Room, MessageStatus
 from backend.monitor import MonitorService
 
 logging.basicConfig(
@@ -133,7 +134,7 @@ class MainApi():
             logging.info(f"Message received from {sender.name}")
 
             message = Message(**content)
-            # message.status = MessageStatus.RECEIVED
+            message.status = MessageStatus.RECEIVED
             logging.info(message)
             logging.info(content)
 
@@ -154,8 +155,7 @@ class MainApi():
                 sender_nickname=me.nickname,
                 room_hash=content['room_hash'],
                 msg=content['msg'],
-                # status=MessageStatus.QUEUED,
-
+                status=MessageStatus.QUEUED
             )
             message.save()
 
@@ -178,6 +178,8 @@ class MainApi():
                     except Exception as e:
                         some_failed = True
                         logging.exception(e)
+            if not some_failed:
+                message.update(status=MessageStatus.DISPATCHED)
 
         @self.socketio.on('contactUpdate')
         def handleMonitorMessage(content):

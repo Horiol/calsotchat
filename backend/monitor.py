@@ -1,8 +1,9 @@
 import time
 import socketio
+import json
 
-from backend.models import Contact
-from backend.api_namespace import contact_model
+from backend.models import Contact, Message, MessageStatus
+from backend.api_namespace import contact_model, message_model
 from flask_restx import marshal
 
 class MonitorService():
@@ -19,6 +20,25 @@ class MonitorService():
         contact.save()
         self.socketio.emit('contactUpdate', marshal(contact, contact_model))
 
+    def _send_queued_messages(self, contact):
+        queued_messages = Message.query.filter_by(
+            status=MessageStatus.QUEUED,
+            room_hash=contact.address
+        ).all()
+
+        # Send private queued messages to this contact
+        for message in queued_messages:
+            message_json = marshal(message, message_model)
+            try:
+                self.onion_session.post(
+                    f'http://{contact.address}/api_internal/new_message/', 
+                    data=json.dumps(message_json),
+                    headers={'Content-Type': 'application/json'}
+                )
+                message.update(status=MessageStatus.DISPATCHED)
+            except:
+                pass
+
     def monitor_contacts(self):
         contacts = Contact.query.filter(Contact.address != self.route).all()
         for contact in contacts:
@@ -30,8 +50,7 @@ class MonitorService():
                 if not original_status:
                     # Set contact to online status
                     self._change_contact_status(contact, True)
-
-                    # TODO: send queued messages
+                    self._send_queued_messages(contact)
             except:
                 if original_status:
                     # Set contact to offline status

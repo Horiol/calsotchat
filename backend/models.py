@@ -70,11 +70,11 @@ class Contact(db.Model):
         private_room = Room.query.filter_by(hash=self.address).first()
         private_room.update(name=self.name)
 
-# class MessageStatus(enum.Enum):
-#     READ = 'READ'
-#     RECEIVED = 'RECEIVED'
-#     DISPATCHED = 'DISPATCHED'
-#     QUEUED = 'QUEUED'
+class MessageStatus(enum.Enum):
+    READ = 'READ'
+    RECEIVED = 'RECEIVED'
+    DISPATCHED = 'DISPATCHED'
+    QUEUED = 'QUEUED'
 
 class Message(db.Model):
     __tablename__ = 'message'
@@ -83,7 +83,7 @@ class Message(db.Model):
     sender_nickname = db.Column(db.String, nullable=False)
     room_hash = db.Column(db.String, db.ForeignKey('room.hash'))
     msg = db.Column(db.String, nullable=False)
-    # status = db.Column(db.Enum(MessageStatus), nullable=False)
+    status = db.Column(db.Enum(MessageStatus))
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
     sender = db.relationship("Contact")
@@ -96,3 +96,8 @@ class Message(db.Model):
     def delete(self):
         db.session.delete(self)
         db.session.commit()
+    def update(self, **kwargs):
+        for key, value in kwargs.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
+        self.save()
