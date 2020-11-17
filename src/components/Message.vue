@@ -1,6 +1,9 @@
 <template>
     <vs-col w="6">
         <vs-alert shadow :color="color" flat style="margin:10px">
+            <template #icon v-if="isMine">
+                <i :class='statusIcon'></i>
+            </template>
             <template #title>
                 <div v-bind:class="{ my_message_title: isMine }">
                     <span v-if="isMine">You</span>
@@ -34,6 +37,13 @@ export default {
                 return "success"
             } else {
                 return 'primary'
+            }
+        },
+        statusIcon: function(){
+            if (this.message.status == "DISPATCHED"){
+                return 'bx bx-check-double'
+            } else {
+                return 'bx bx-time'
             }
         }
     }

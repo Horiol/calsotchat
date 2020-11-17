@@ -99,6 +99,10 @@ export default {
           this.messages.push(data)
         }
       }
+    },
+    updateMessage: function(data) {
+      console.log(data);
+      //TODO
     }
   },
   watch:{

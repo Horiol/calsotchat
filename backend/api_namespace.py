@@ -7,7 +7,7 @@ from werkzeug.exceptions import BadRequest, InternalServerError, NotFound, Confl
 
 from flask_cors import CORS
 
-from backend.models import Message, Contact, Room
+from backend.models import Message, Contact, Room, MessageStatus
 from backend.db import db
 
 api = Namespace('Api', description='')
@@ -37,7 +37,7 @@ message_model = api.model('Message', {
     'sender_nickname': fields.String(),
     'room_hash': fields.String(),
     'msg': fields.String(),
-    # 'status': fields.String(enum=['READ', 'RECEIVED', 'DISPATCHED', 'QUEUED'], readonly=True),
+    'status': fields.String(attribute=lambda x: str(MessageStatus(x.status).name), readonly=True),
     'timestamp': fields.DateTime(readonly=True),
     'sender': fields.Nested(contact_model, readonly=True),
     # 'room': fields.Nested(room_model, readonly=True),
