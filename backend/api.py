@@ -4,6 +4,7 @@ import logging
 import json
 import os
 import time
+import threading
 
 from flask import Flask, request
 from flask_cors import CORS
@@ -13,6 +14,7 @@ from flask_restx import Api, marshal
 from backend.db import db
 from backend.api_namespace import api as namespace_api, message_model, contact_model, room_model
 from backend.models import Message, Contact, Room
+from backend.monitor import MonitorService
 
 logging.basicConfig(
     format='%(asctime)s [%(levelname)-8s] (%(filename)-10s:%(lineno)3d) (%(name)s) %(message)s', 
@@ -185,6 +187,13 @@ class MainApi():
         """
         Start the Flask web server
         """
+
+        # Start monitor service
+        self.monitor = MonitorService(self.origin, self.app, self.onion_session)
+        thread = threading.Thread(target=self.monitor.start)
+        thread.daemon = True
+        thread.start()
+
         if not self.running:
             self.port = port
             self.running = True
@@ -208,6 +217,7 @@ class MainApi():
         Stop the Flask web server
         """
         if self.running:
+            self.monitor.stop()
             try:
                 requests.get(
                     f"http://127.0.0.1:{self.port}/shutdown/"

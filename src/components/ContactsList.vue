@@ -21,10 +21,22 @@
             </vs-sidebar-item>
 
             <vs-sidebar-item v-for="contact in contacts" :id="contact.hash" :key="contact.hash">
+                <template #icon>
+                    <span v-if="contact.members.length == 1">
+                        <vs-avatar badge :badge-color="userStatus(contact.members[0])" badge-position="top-right">
+                            <i class='bx bx-user'></i>
+                        </vs-avatar>
+                    </span>
+                    <span v-else>
+                        <vs-avatar>
+                            <i class='bx bx-group'></i>
+                        </vs-avatar>
+                    </span>
+                </template>
+                {{contact.name}}
                 <span v-if="contact.hash == myself.address">
                     (You)
                 </span>
-                {{contact.name}}
             </vs-sidebar-item>
         </vs-sidebar>
 
@@ -112,6 +124,14 @@ export default {
         }
     },
     methods:{
+        userStatus: function(contact){
+            if (contact.online){
+                console.log(contact);
+                return "success"
+            } else {
+                return "danger"
+            }
+        },
         addNewContact: function(){
             if (this.validAddress){
                 this.loading_dialog = true

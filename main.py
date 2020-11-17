@@ -28,12 +28,13 @@ def main(**kwargs):
     
     tor_service = Tor()
     route = tor_service.start_service(**kwargs)
+    logging.info("Onion service started")
     
     flask_api = MainApi(route, **kwargs)
     # Start API service in new thread
-    thread = threading.Thread(target=flask_api.start, args=(kwargs['port'],))
-    thread.daemon = True
-    thread.start()
+    api_thread = threading.Thread(target=flask_api.start, args=(kwargs['port'],))
+    api_thread.daemon = True
+    api_thread.start()
     logging.info("API started")
 
     while True:
@@ -46,7 +47,7 @@ def main(**kwargs):
             logging.debug("API stopped")
 
             tor_service.stop_service()
-            logging.debug("Onion Service stopped")
+            logging.debug("Onion service stopped")
 
             logging.info("Services stopped, bye")
             break
