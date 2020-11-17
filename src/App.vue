@@ -122,6 +122,15 @@ export default {
   sockets: {
     newContact: function (data) {
       this.contacts.push(data)
+    },
+    contactUpdate: function(data) {
+      for (let index = 0; index < this.contacts.length; index++) {
+        const room = this.contacts[index];
+        if (room.hash == data.address){
+          this.contacts[index]['members'] = [data]
+        }
+      }
+      // TODO: what to do in groups?
     }
   }
 }

@@ -126,7 +126,6 @@ export default {
     methods:{
         userStatus: function(contact){
             if (contact.online){
-                console.log(contact);
                 return "success"
             } else {
                 return "danger"

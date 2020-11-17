@@ -178,6 +178,10 @@ class MainApi():
                     except Exception as e:
                         some_failed = True
                         logging.exception(e)
+
+        @self.socketio.on('contactUpdate')
+        def handleMonitorMessage(content):
+            self.socketio.emit('contactUpdate', content, namespace="/api/internal")
             
             # if not some_failed:
             #     message.status = MessageStatus.DISPATCHED
@@ -190,7 +194,7 @@ class MainApi():
 
         # Start monitor service
         self.monitor = MonitorService(self.origin, self.app, self.onion_session)
-        thread = threading.Thread(target=self.monitor.start)
+        thread = threading.Thread(target=self.monitor.start, args=(port, ))
         thread.daemon = True
         thread.start()
 
