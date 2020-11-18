@@ -98,8 +98,8 @@ for example, to launch the second instance we will do the following in a cmd ter
 
 - [ ] Chat in groups with multiple members
 - [x] Static Tor address
-- [ ] Edit contact names
-- [ ] Check contacts status (online/offline)
-- [ ] Resend failed messages when contaact reconnects
+- [x] Edit contact names
+- [x] Check contacts status (online/offline)
+- [x] Resend failed messages when contact reconnects
 - [ ] Write logs when running in Bundle
 - [x] Make ports dynamics
