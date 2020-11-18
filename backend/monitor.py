@@ -30,12 +30,14 @@ class MonitorService():
         for message in queued_messages:
             message_json = marshal(message, message_model)
             try:
-                self.onion_session.post(
+                result = self.onion_session.post(
                     f'http://{contact.address}/api_internal/new_message/', 
                     data=json.dumps(message_json),
                     headers={'Content-Type': 'application/json'}
                 )
-                message.update(status=MessageStatus.DISPATCHED)
+                if result.status_code == 200:
+                    message.update(status=MessageStatus.DISPATCHED)
+                    self.socketio.emit('updateMessage', marshal(message, message_model))
             except:
                 pass
 

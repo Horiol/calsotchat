@@ -10,6 +10,13 @@
             (You)
           </span>
           {{room.name}}
+          <vs-button 
+            style="display:inline"
+            icon
+            @click="openModal"
+          >
+            <i class='bx bxs-pencil' ></i>
+          </vs-button>
         </h2>
       </vs-row>
       <vs-row justify="center" align="center">
@@ -36,12 +43,34 @@
         <vs-row 
           :justify="check_message_origin(message)"
           v-for="message in messages" 
-          :key="message.timestamp"
+          :key="message.id"
         >
           <message :message="message" :myself="myself"/>
         </vs-row>
       </div>
     </div>
+
+    <vs-dialog v-model="active">
+      <template #header>
+          <h4 class="not-margin">
+            New Name
+          </h4>
+      </template>
+      <div class="con-form">
+        <vs-input v-model="new_name" label-placeholder="Name" @keyup.enter="saveName">
+            <template #icon>
+              <i class='bx bxs-user' ></i>
+            </template>
+        </vs-input>
+      </div>
+      <template #footer>
+          <div class="footer-dialog">
+              <vs-button block @click="saveName">
+                  Save Name
+              </vs-button>
+          </div>
+      </template>
+    </vs-dialog>
   </div>
 </template>
 
@@ -58,6 +87,7 @@ export default {
   },
   data:() => ({
     active:false,
+    new_name:'',
     msg:'',
     messages:[
       // {
@@ -68,7 +98,20 @@ export default {
       // }
     ],
   }),
+  mounted: function(){
+    if (this.room !== null){
+      this.loadMessages()
+    }
+  },
   methods: {
+    loadMessages(){
+      this.new_name = this.room.name
+      this.axios
+        .get('/rooms/' + this.room.hash + "/messages/")
+        .then((response) => {
+          this.messages = response.data.reverse()
+        })
+    },
     sendMessage(){
       if (this.msg !== ''){
         var msg_data = {
@@ -78,9 +121,7 @@ export default {
         this.$socket.emit('send-message', msg_data)
 
         msg_data['sender'] = this.myself
-        this.messages.push(msg_data)
         this.msg = ''
-        this.active = false
       }
     },
     check_message_origin: function(message){
@@ -89,30 +130,46 @@ export default {
       } else {
         return 'flex-start'
       }
+    },
+    openModal: function(){
+      this.active = true
+    },
+    saveName: function(){
+      this.axios
+      .put('/rooms/' + this.room.hash + '/', {
+          "name": this.new_name
+      })
+      .then(response => {
+        this.$emit('update-room', response.data)
+        this.active = false
+      })
     }
   },
   sockets: {
     newMessage: function (data) {
       if (this.room !== null){
-        var address_array = this.room.members.map(member => member.address);
-        if (address_array.indexOf(data.sender_address) > -1){ // TODO: Improve this function when adding groups feature
+        // var address_array = this.room.members.map(member => member.address);
+        // if (address_array.indexOf(data.sender_address) > -1){ // TODO: Improve this function when adding groups feature
+        //   this.messages.push(data)
+        // }
+        if (data.room_hash == this.room.hash){
           this.messages.push(data)
         }
       }
     },
     updateMessage: function(data) {
-      console.log(data);
-      //TODO
+      for (let index = 0; index < this.messages.length; index++) {
+        const message = this.messages[index]
+        if (message.id == data.id){
+          this.$set(this.messages, index, data)
+        }        
+      }
     }
   },
   watch:{
     room: function(){
       if (this.room !== null){
-        this.axios
-          .get('/rooms/' + this.room.hash + "/messages/")
-          .then((response) => {
-            this.messages = response.data.reverse()
-          })
+        this.loadMessages()
       }
     },
     messages: function(){

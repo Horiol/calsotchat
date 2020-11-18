@@ -10,7 +10,11 @@
     <div class="grid main-window">
       <vs-row>
         <vs-col w="12">
-          <chat :myself="myself" :room="selected_contact"/>
+          <chat 
+            :myself="myself" 
+            :room="selected_contact"
+            @update-room="updateRoom"
+          />
         </vs-col>
       </vs-row>
     </div>
@@ -74,6 +78,17 @@ export default {
     this.mainLoad()
   },
   methods:{
+    updateRoom: function(data){
+      for (let index = 0; index < this.contacts.length; index++) {
+        const room = this.contacts[index];
+        if (room.id == data.id){
+          this.$set(this.contacts, index, data)
+          if (this.selected_contact.id == data.id){
+            this.selected_contact = data
+          }
+        }
+      }
+    },
     mainLoad: function(){
       this.axios.all([
         this.axios

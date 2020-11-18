@@ -141,6 +141,21 @@ class RoomInstanceResource(Resource):
         if room:
             room.delete()
         return '', 204
+    
+    @api.expect(room_model, validate=True)
+    @api.marshal_with(room_model)
+    def put(self, hash):
+        room = Room.query.filter_by(hash=hash).first()
+        if not room:
+            raise NotFound()
+
+        room.update(**api.payload)
+
+        if 'name' in api.payload and room.private:
+            # Update user name
+            user = room.members[0]
+            user.update(name=api.payload["name"])
+        return room
 
 @api.route(f'/{rooms_ns}/<string:hash>/messages/')
 class RoomMessagesResource(Resource):

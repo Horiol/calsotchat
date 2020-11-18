@@ -158,6 +158,7 @@ class MainApi():
                 status=MessageStatus.QUEUED
             )
             message.save()
+            self.socketio.emit('newMessage', marshal(message, message_model), namespace="/api/internal")
 
             receivers = Room.query.filter_by(hash=content['room_hash']).first().members
             some_failed = False
@@ -166,11 +167,14 @@ class MainApi():
             for receiver in receivers: # TODO: review and make it more asyncronous
                 if receiver.address != self.origin:
                     try:
-                        self.onion_session.post(
+                        result = self.onion_session.post(
                             f'http://{receiver.address}/api_internal/new_message/', 
                             data=json.dumps(message_json),
                             headers=json_headers
                         )
+                        if result.status_code != 200:
+                            logging.error(result.content)
+                            raise ConnectionError
                         logging.info(f"Message {message.id} sent to {receiver.name}")
                     except ConnectionError:
                         some_failed = True
@@ -180,14 +184,16 @@ class MainApi():
                         logging.exception(e)
             if not some_failed:
                 message.update(status=MessageStatus.DISPATCHED)
+                self.socketio.emit('updateMessage', marshal(message, message_model), namespace="/api/internal")
 
         @self.socketio.on('contactUpdate')
         def handleMonitorMessage(content):
             self.socketio.emit('contactUpdate', content, namespace="/api/internal")
+
+        @self.socketio.on('updateMessage')
+        def handleMonitorMessage2(content):
+            self.socketio.emit('updateMessage', content, namespace="/api/internal")
             
-            # if not some_failed:
-            #     message.status = MessageStatus.DISPATCHED
-            #     message.save()
 
     def start(self, port=5000, dev=False):
         """
