@@ -14,6 +14,7 @@ class Room(db.Model):
     hash = db.Column(db.String, unique=True)
     name = db.Column(db.String, nullable=False)
     private = db.Column(db.Boolean, default=False)
+    admin_address = db.Column(db.String, nullable=True)
 
     members = db.relationship("Contact", secondary=rooms_contacts_association)
 

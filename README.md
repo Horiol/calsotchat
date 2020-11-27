@@ -103,3 +103,4 @@ for example, to launch the second instance we will do the following in a cmd ter
 - [x] Resend failed messages when contact reconnects
 - [ ] Write logs when running in Bundle
 - [x] Make ports dynamics
+- [ ] Mechanism to discover of servers

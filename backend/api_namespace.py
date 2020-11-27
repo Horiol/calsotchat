@@ -1,6 +1,6 @@
 import logging
 
-from flask import Flask
+from flask import g
 from flask_restx import Api, Resource, fields, Namespace
 from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.exceptions import BadRequest, InternalServerError, NotFound, Conflict
@@ -28,6 +28,7 @@ room_model = api.model('Room', {
     'id': fields.Integer(readonly=True),
     'hash': fields.String(readonly=True),
     'name': fields.String(),
+    'admin_address': fields.String(),
     'members': fields.List(fields.Nested(contact_model, readonly=True))
 })
 
@@ -43,6 +44,11 @@ message_model = api.model('Message', {
     # 'room': fields.Nested(room_model, readonly=True),
 })
 
+@api.route(f'/myself/')
+class MyselfResource(Resource):
+    @api.marshal_with(contact_model)
+    def get(self):
+        return Contact.query.filter_by(address=g.origin).first()
 
 @api.route(f'/{contacts_ns}/')
 class ContactResource(Resource):
@@ -120,7 +126,45 @@ class RoomResource(Resource):
     @api.expect(room_model, validate=True)
     @api.marshal_with(room_model, code=201)
     def post(self):
+        api.payload["private"] = False
+        if not api.payload.get("hash", None):
+            api.payload["hash"] = f"{api.payload['name'].replace(' ', '_')}_{g.origin}"
+        if not api.payload.get("admin_address", None):
+            api.payload["admin_address"] = g.origin
+        
+        room = Room.query.filter_by(hash=api.payload["hash"]).first()
+        if room:
+            raise Conflict("Room name not available")
+
+
+        members = []
+        try:
+            members = api.payload["members"]
+            del api.payload["members"]
+        except:
+            pass
+
         room = Room(**api.payload)
+
+        me = Contact.query.filter_by(address=g.origin).first()
+        room.members.append(me)
+
+        for member in members:
+            contact = Contact.query.filter_by(address=member["address"]).first()
+            if not contact:
+                try:
+                    del member["name"]
+                except:
+                    pass
+                try:
+                    del member["id"]
+                except:
+                    pass
+
+                contact = Contact(**member)
+                contact.save()
+
+            room.members.append(contact)
         room.save()
         logging.info(f"Room {room.name} created")
 
@@ -163,3 +207,32 @@ class RoomMessagesResource(Resource):
     def get(self, hash):
         # return Message.query.filter_by(room_id=id).order_by(Message.timestamp).all()
         return Message.query.filter_by(room_hash=hash).order_by(Message.timestamp.desc()).limit(10).all()
+
+@api.route(f'/{rooms_ns}/<string:hash>/members/')
+class RoomMembersResource(Resource):
+    @api.marshal_with(room_model)
+    def post(self, hash):
+        room = Room.query.filter_by(hash=hash).first()
+        if not room:
+            raise NotFound()
+
+        for user in api.payload['members']:
+            user_object = Contact.query.get(user)
+            room.members.append(user_object)
+        room.save()
+
+        return room
+    
+    @api.marshal_with(room_model)
+    def delete(self, hash):
+        room = Room.query.filter_by(hash=hash).first()
+        if not room:
+            raise NotFound()
+
+        for user in api.payload['members']:
+            user_object = Contact.query.get(user)
+            if user_object.address != g.origin:
+                room.members.remove(user_object)
+        room.save()
+
+        return room

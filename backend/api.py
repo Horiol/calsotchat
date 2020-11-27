@@ -7,7 +7,7 @@ import os
 import time
 import threading
 
-from flask import Flask, request
+from flask import Flask, request, g
 from flask_cors import CORS
 from flask_socketio import SocketIO
 from flask_restx import Api, marshal
@@ -92,9 +92,7 @@ class MainApi():
     def _define_internal_routes(self):
         @self.app.before_request
         def before_func():
-            # TODO
-            # logging.info("Test")
-            pass
+            g.origin = self.origin
 
         @self.app.route("/shutdown/")
         def shutdown():
@@ -105,11 +103,6 @@ class MainApi():
         @self.app.route("/healthz/")
         def healthz():
             return {"status":"ok"}
-        
-        @self.app.route("/api/myself/")
-        def myself():
-            me = Contact.query.filter_by(address=self.origin).first()
-            return marshal(me, contact_model)
 
         @self.api.expect(message_model, validate=True)
         @self.app.route('/api_internal/new_message/', methods=['POST'])
