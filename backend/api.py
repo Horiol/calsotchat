@@ -93,6 +93,8 @@ class MainApi():
         @self.app.before_request
         def before_func():
             g.origin = self.origin
+            g.onion_session = self.onion_session
+            g.socketio = self.socketio
 
         @self.app.route("/shutdown/")
         def shutdown():

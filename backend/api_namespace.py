@@ -1,7 +1,7 @@
 import logging
 
 from flask import g
-from flask_restx import Api, Resource, fields, Namespace
+from flask_restx import Resource, fields, Namespace, marshal
 from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.exceptions import BadRequest, InternalServerError, NotFound, Conflict
 
@@ -9,6 +9,7 @@ from flask_cors import CORS
 
 from backend.models import Message, Contact, Room, MessageStatus
 from backend.db import db
+from backend.utils import create_room_to_member
 
 api = Namespace('Api', description='')
 
@@ -127,15 +128,16 @@ class RoomResource(Resource):
     @api.marshal_with(room_model, code=201)
     def post(self):
         api.payload["private"] = False
+        is_mine = False
+
         if not api.payload.get("hash", None):
             api.payload["hash"] = f"{api.payload['name'].replace(' ', '_')}_{g.origin}"
-        if not api.payload.get("admin_address", None):
             api.payload["admin_address"] = g.origin
+            is_mine = True
         
         room = Room.query.filter_by(hash=api.payload["hash"]).first()
         if room:
             raise Conflict("Room name not available")
-
 
         members = []
         try:
@@ -168,6 +170,12 @@ class RoomResource(Resource):
         room.save()
         logging.info(f"Room {room.name} created")
 
+        room_json = marshal(room, room_model)
+        if is_mine:
+            for member in room.members:
+                if member.address != g.origin:
+                    create_room_to_member(g.onion_session, member, room_json)
+        g.socketio.emit('newRoom', room_json, namespace="/api/internal")
         return room
 
 @api.route(f'/{rooms_ns}/<string:hash>/')
@@ -215,10 +223,15 @@ class RoomMembersResource(Resource):
         room = Room.query.filter_by(hash=hash).first()
         if not room:
             raise NotFound()
+        if room.admin_address != g.origin:
+            raise BadRequest("You are not the room owner")
 
+        room_json = marshal(room, room_model)
         for user in api.payload['members']:
             user_object = Contact.query.get(user)
             room.members.append(user_object)
+            if user.address != g.origin:
+                create_room_to_member(g.onion_session, user_object, room_json)
         room.save()
 
         return room
@@ -228,6 +241,8 @@ class RoomMembersResource(Resource):
         room = Room.query.filter_by(hash=hash).first()
         if not room:
             raise NotFound()
+        if room.admin_address != g.origin:
+            raise BadRequest("You are not the room owner")
 
         for user in api.payload['members']:
             user_object = Contact.query.get(user)
