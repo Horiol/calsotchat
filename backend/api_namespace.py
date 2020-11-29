@@ -11,6 +11,10 @@ from backend.models import Message, Contact, Room, MessageStatus
 from backend.db import db
 from backend.utils import create_room_to_member
 
+class NullableString(fields.String):
+    __schema_type__ = ['string', 'null']
+    __schema_example__ = 'nullable string'
+
 api = Namespace('Api', description='')
 
 contacts_ns = 'contacts'
@@ -20,7 +24,7 @@ rooms_ns = 'rooms'
 contact_model = api.model('Contact', {
     'id': fields.Integer(readonly=True),
     'address': fields.String(required=True),
-    'name': fields.String(required=True),
+    'name': NullableString(),
     'nickname': fields.String(required=True),
     'online': fields.Boolean(readonly=True),
 })
@@ -30,7 +34,8 @@ room_model = api.model('Room', {
     'hash': fields.String(readonly=True),
     'name': fields.String(),
     'admin_address': fields.String(),
-    'members': fields.List(fields.Nested(contact_model, readonly=True))
+    'members': fields.List(fields.Nested(contact_model, readonly=True)),
+    'private': fields.Boolean(readonly=True),
 })
 
 message_model = api.model('Message', {

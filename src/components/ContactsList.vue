@@ -11,11 +11,6 @@
             <template #header>
                 <h3>Contacts</h3>
             </template>
-            <template #footer>
-                <vs-button @click="new_contact_dialog=!new_contact_dialog">
-                    <i class='bx bxs-user-plus' ></i> Add Contact
-                </vs-button>
-            </template>
             <vs-sidebar-item v-if="contacts.length == 0" id="no_contacts">
                 
             </vs-sidebar-item>
@@ -38,6 +33,15 @@
                     (You)
                 </span>
             </vs-sidebar-item>
+
+            <template #footer>
+                <vs-button @click="new_contact_dialog=!new_contact_dialog">
+                    <i class='bx bxs-user-plus' ></i> Add Contact
+                </vs-button>
+                <vs-button @click="new_group_dialog=!new_group_dialog">
+                    <i class='bx bxs-group' ></i> New group
+                </vs-button>
+            </template>
         </vs-sidebar>
 
         <vs-dialog v-model="new_contact_dialog" :loading="loading_dialog">
@@ -72,6 +76,38 @@
                 </div>
             </template>
         </vs-dialog>
+
+        <vs-dialog v-model="new_group_dialog" :loading="loading_dialog">
+            <template #header>
+                <h4 class="not-margin">
+                    New Group
+                </h4>
+            </template>
+            <div class="con-form">
+                <vs-input v-model="new_group.name" label-placeholder="Group name">
+                    <template #icon>
+                        <i class='bx bxs-group' ></i>
+                    </template>
+                </vs-input>
+                <br>
+                <vs-select
+                    label="Members"
+                    multiple
+                    v-model="new_group.members"
+                >
+                    <vs-option v-for="contact in private_contacts" :label="contactName(contact)" :value="contact" :key="contact.id">
+                        {{contactName(contact)}}
+                    </vs-option>
+                </vs-select>
+            </div>
+            <template #footer>
+                <div class="footer-dialog">
+                    <vs-button block @click="addNewGroup()">
+                        Create group
+                    </vs-button>
+                </div>
+            </template>
+        </vs-dialog>
     </div>
 </template>
 
@@ -89,6 +125,11 @@ export default {
         new_contact:{
             address:'',
             name:''
+        },
+        new_group_dialog: false,
+        new_group: {
+            name: '',
+            members: []
         }
     }),
     mounted: function(){
@@ -103,9 +144,26 @@ export default {
                 address:'',
                 name:''
             }
+        },
+        new_group_dialog: function(){
+            this.new_group = {
+                name:'',
+                members:[]
+            }
         }
     },
     computed:{
+        private_contacts: function(){
+            var th = this;
+            var private_rooms = this.contacts.filter(function(contact){
+                if (contact.hash == th.myself.address){
+                    return false
+                }
+                return contact.private
+            })
+
+            return private_rooms.map(room => room.members[0])
+        },
         validAddress: function(){
             if (this.new_contact.address.length == 0){
                 return true
@@ -124,6 +182,13 @@ export default {
         }
     },
     methods:{
+        contactName: function(contact){
+            if (contact.name != null){
+                return contact.name
+            }else{
+                return contact.nickname
+            }
+        },
         userStatus: function(contact){
             if (contact.online){
                 return "success"
@@ -151,6 +216,18 @@ export default {
                 })
             }
         },
+        addNewGroup:function(){
+            // this.new_group.members.push(this.myself)
+
+            this.loading_dialog = true
+            this.axios
+            .post('/rooms/', this.new_group)
+            .then(response => {
+                this.$emit('new-contact', response.data)
+                this.loading_dialog = false
+                this.new_group_dialog = false
+            })
+        },
         userSelected: function(room_hash){
             var room = this.contacts.filter(function(element){
                 return element.hash == room_hash
@@ -166,5 +243,11 @@ export default {
 .custom-logo{
     max-width: 120px !important;
     max-height: 120px !important;
+}
+.vs-select-content{
+    max-width: none !important;
+}
+.vs-select__chips__chip__close{
+    display: none !important;
 }
 </style>
