@@ -110,9 +110,9 @@ class MainApi():
         @self.app.route('/api_internal/new_message/', methods=['POST'])
         def new_message():
             content = self.api.payload
-            del content['id']
-            del content['sender']
-            del content['timestamp']
+            content.pop('id', None)
+            content.pop('sender', None)
+            content.pop('timestamp', None)
 
             sender = Contact.query.filter_by(address=content['sender_address']).first()
             if not sender:

@@ -7,7 +7,7 @@
             <template #title>
                 <div v-bind:class="{ my_message_title: isMine }">
                     <span v-if="isMine">You</span>
-                    <span v-else>{{message.sender.name}}</span>
+                    <span v-else>{{contactName}}</span>
                 </div>
             </template>
                 <div v-bind:class="{ my_message: isMine }">
@@ -25,6 +25,13 @@ export default {
         myself: Object
     },
     computed:{
+        contactName(){
+            if (this.message.sender.name != null){
+                return this.message.sender.name
+            }else{
+                return this.message.sender.nickname
+            }
+        },
         isMine(){
             if (this.message.sender.address == this.myself.address){
                 return true
