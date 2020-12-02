@@ -144,12 +144,7 @@ class RoomResource(Resource):
         if room:
             raise Conflict("Room name not available")
 
-        members = []
-        try:
-            members = api.payload["members"]
-            del api.payload["members"]
-        except:
-            pass
+        members = api.payload.pop("members", [])
 
         room = Room(**api.payload)
 
@@ -159,14 +154,8 @@ class RoomResource(Resource):
         for member in members:
             contact = Contact.query.filter_by(address=member["address"]).first()
             if not contact:
-                try:
-                    del member["name"]
-                except:
-                    pass
-                try:
-                    del member["id"]
-                except:
-                    pass
+                member.pop("name", None)
+                member.pop("id", None)
 
                 contact = Contact(**member)
                 contact.save()
