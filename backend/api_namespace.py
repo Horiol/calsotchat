@@ -1,4 +1,6 @@
 import logging
+import string
+import secrets
 
 from flask import g
 from flask_restx import Resource, fields, Namespace, marshal
@@ -136,14 +138,20 @@ class RoomResource(Resource):
         is_mine = False
 
         if not api.payload.get("hash", None):
-            api.payload["hash"] = f"{api.payload['name'].replace(' ', '_')}_{g.origin}"
+            alphabet = string.ascii_letters + string.digits
+
+            is_not_unique = True
+            while is_not_unique:
+                salt = ''.join(secrets.choice(alphabet) for i in range(12))
+
+                api.payload["hash"] = f"{salt}_{g.origin}"
+                room = Room.query.filter_by(hash=api.payload["hash"]).first()
+                if not room:
+                    is_not_unique = False
+
             api.payload["admin_address"] = g.origin
             is_mine = True
         
-        room = Room.query.filter_by(hash=api.payload["hash"]).first()
-        if room:
-            raise Conflict("Room name not available")
-
         members = api.payload.pop("members", [])
 
         room = Room(**api.payload)
