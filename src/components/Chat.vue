@@ -11,6 +11,7 @@
           </span>
           {{room.name}}
           <vs-button 
+            v-if="canEdit"
             style="display:inline"
             icon
             @click="openModal"
@@ -50,7 +51,7 @@
       </div>
     </div>
 
-    <vs-dialog v-model="active">
+    <vs-dialog v-model="active" :loading="loading_dialog">
       <template #header>
           <h4 class="not-margin">
             New Name
@@ -62,6 +63,17 @@
               <i class='bx bxs-user' ></i>
             </template>
         </vs-input>
+        <br>
+        <vs-select
+            v-if="!room.private"
+            label="Members"
+            multiple
+            v-model="new_members"
+        >
+            <vs-option v-for="contact in private_contacts" :label="contactName(contact)" :value="contact.id" :key="contact.id">
+                {{contactName(contact)}}
+            </vs-option>
+        </vs-select>
       </div>
       <template #footer>
           <div class="footer-dialog">
@@ -84,19 +96,15 @@ export default {
   props:{
     room:Object,
     myself:Object,
+    contacts: Array
   },
   data:() => ({
     active:false,
     new_name:'',
+    new_members: [],
     msg:'',
-    messages:[
-      // {
-      //   timestamp:1,
-      //   origin: "gxf3xsmy6trcaugd5pvfpr652qxnzizx4zxf5smcwtczobters37awad.onion:8080",
-      //   name: "Test User",
-      //   msg: "test message"
-      // }
-    ],
+    messages:[],
+    loading_dialog: false
   }),
   mounted: function(){
     if (this.room !== null){
@@ -104,6 +112,13 @@ export default {
     }
   },
   methods: {
+    contactName: function(contact){
+        if (contact.name != null){
+            return contact.name
+        }else{
+            return contact.nickname
+        }
+    },
     loadMessages(){
       this.new_name = this.room.name
       this.axios
@@ -135,12 +150,48 @@ export default {
       this.active = true
     },
     saveName: function(){
+      this.loading_dialog = true
+      if (!this.room.private){
+        const old_ids = this.room.members.map(member => member.id)
+        var ids_2_add = []
+        var ids_2_delete = []
+  
+        for (let index = 0; index < this.new_members.length; index++) {
+          const new_member_id = this.new_members[index];
+          if (!old_ids.includes(new_member_id)){
+            ids_2_add.push(new_member_id)
+          }
+        }
+        if(ids_2_add.length>0){
+          this.axios
+          .post('/rooms/' + this.room.hash + '/members/', {
+              "members": ids_2_add
+          })
+        }
+  
+        for (let index = 0; index < old_ids.length; index++) {
+          const old_id = old_ids[index];
+          if (!this.new_members.includes(old_id)){
+            ids_2_delete.push(old_id)
+          }
+        }
+        if(ids_2_delete.length>0){
+          this.axios
+          .delete('/rooms/' + this.room.hash + '/members/', {
+            data:{
+              "members": ids_2_delete
+            }
+          })
+        }
+      }
+
       this.axios
       .put('/rooms/' + this.room.hash + '/', {
           "name": this.new_name
       })
       .then(response => {
         this.$emit('update-room', response.data)
+        this.loading_dialog = false
         this.active = false
       })
     }
@@ -169,6 +220,7 @@ export default {
   watch:{
     room: function(){
       if (this.room !== null){
+        this.new_members = this.room.members.map(member => member.id)
         this.loadMessages()
       }
     },
@@ -178,6 +230,26 @@ export default {
         var container = th.$el.querySelector("#chat-window");
         container.scrollTop = container.scrollHeight;
       }, 100) // wait 100ms because the message is displayed in the UI properlly before scroll
+    }
+  },
+  computed:{
+    canEdit: function(){
+      if (this.room.private){
+        return true
+      }else{
+        return (this.room.admin_address == this.myself.address)
+      }
+    },  
+    private_contacts: function(){
+        var th = this;
+        var private_rooms = this.contacts.filter(function(contact){
+            if (contact.hash == th.myself.address){
+                return false
+            }
+            return contact.private
+        })
+        console.log(private_rooms);
+        return private_rooms.map(room => room.members[0])
     }
   }
 }

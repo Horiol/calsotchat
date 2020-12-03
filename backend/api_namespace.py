@@ -232,7 +232,7 @@ class RoomMembersResource(Resource):
         for user in api.payload['members']:
             user_object = Contact.query.get(user)
             room.members.append(user_object)
-            if user.address != g.origin:
+            if user_object.address != g.origin:
                 create_room_to_member(g.onion_session, user_object, room_json)
         room.save()
 

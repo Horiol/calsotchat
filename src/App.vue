@@ -13,6 +13,7 @@
           <chat 
             :myself="myself" 
             :room="selected_contact"
+            :contacts="contacts"
             @update-room="updateRoom"
           />
         </vs-col>
