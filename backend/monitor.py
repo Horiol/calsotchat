@@ -2,7 +2,7 @@ import time
 import socketio
 import json
 
-from backend.models import Contact, Message, MessageStatus
+from backend.models import Contact, Message, MessageStatus, MessageQueue
 from backend.api_namespace import contact_model, message_model
 from flask_restx import marshal
 
@@ -21,14 +21,14 @@ class MonitorService():
         self.socketio.emit('contactUpdate', marshal(contact, contact_model))
 
     def _send_queued_messages(self, contact):
-        queued_messages = Message.query.filter_by(
+        queued_messages = MessageQueue.query.filter_by(
             status=MessageStatus.QUEUED,
-            room_hash=contact.address
+            receiver_id=contact.id
         ).all()
 
         # Send private queued messages to this contact
         for message in queued_messages:
-            message_json = marshal(message, message_model)
+            message_json = marshal(message.message, message_model)
             try:
                 result = self.onion_session.post(
                     f'http://{contact.address}/api_internal/new_message/', 
@@ -37,7 +37,7 @@ class MonitorService():
                 )
                 if result.status_code == 200:
                     message.update(status=MessageStatus.DISPATCHED)
-                    self.socketio.emit('updateMessage', marshal(message, message_model))
+                    self.socketio.emit('updateMessage', marshal(message.message, message_model))
             except:
                 pass
 

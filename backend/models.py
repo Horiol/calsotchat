@@ -102,3 +102,36 @@ class Message(db.Model):
             if hasattr(self, key):
                 setattr(self, key, value)
         self.save()
+
+class MessageQueue(db.Model):
+    __tablename__ = 'message_queue'
+    id = db.Column(db.Integer, primary_key=True)
+    receiver_id = db.Column(db.Integer, db.ForeignKey('contact.id'))
+    msg_id = db.Column(db.Integer, db.ForeignKey('message.id'))
+    status = db.Column(db.Enum(MessageStatus))
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+    receiver = db.relationship("Contact")
+    message = db.relationship("Message")
+
+    def save(self):
+        if not self.id:
+            db.session.add(self)
+        db.session.commit()
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()
+    def update(self, **kwargs):
+        for key, value in kwargs.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
+        self.save()
+
+        # If all queued messages of a message id had been send we edit the message status to DISPATCHED
+        queued_messages = MessageQueue.query.filter_by(
+            msg_id=self.msg_id,
+            status=MessageStatus.QUEUED
+        ).all()
+        if len(queued_messages) == 0:
+            message = Message.query.get(self.msg_id)
+            message.update(status=MessageStatus.DISPATCHED)

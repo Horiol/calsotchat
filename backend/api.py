@@ -14,7 +14,7 @@ from flask_restx import Api, marshal
 
 from backend.db import db
 from backend.api_namespace import api as namespace_api, message_model, contact_model, room_model
-from backend.models import Message, Contact, Room, MessageStatus
+from backend.models import Message, Contact, Room, MessageStatus, MessageQueue
 from backend.monitor import MonitorService
 
 logging.basicConfig(
@@ -174,6 +174,12 @@ class MainApi():
                     except ConnectionError:
                         some_failed = True
                         logging.warning(f"Message can not be sent to {receiver.name}")
+                        queued_message = MessageQueue(
+                            msg_id=message.id,
+                            receiver_id=receiver.id,
+                            status=MessageStatus.QUEUED
+                        )
+                        queued_message.save()
                     except Exception as e:
                         some_failed = True
                         logging.exception(e)
