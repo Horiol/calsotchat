@@ -133,7 +133,7 @@ export default {
           room_hash: this.room.hash,
           msg: this.msg
         }
-        this.$socket.emit('send-message', msg_data)
+        this.$socket.emit('send-message', msg_data) // TODO: add message to the conversation automatically?
 
         msg_data['sender'] = this.myself
         this.msg = ''

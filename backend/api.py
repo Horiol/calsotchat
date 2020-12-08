@@ -122,10 +122,10 @@ class MainApi():
                     address=content['sender_address'],
                     online=True
                 )
-                room = sender.save()
+                contact_room = sender.save()
 
                 # Emit new contact event
-                self.socketio.emit('newContact', marshal(room, room_model), namespace="/api/internal")
+                self.socketio.emit('newContact', marshal(contact_room, room_model), namespace="/api/internal")
             logging.info(f"Message received from {sender.name}")
 
             message = Message(**content)
@@ -135,7 +135,31 @@ class MainApi():
 
             if message.room_hash == self.origin: # Direct message to me -> overwrite the room_hash
                 message.room_hash = content['sender_address']
+            
+            if not message.room["private"]:
+                # Check if room exist, create new room if not
+                db_room = Room.query.filter_by(hash=message.room["hash"]).first()
+                if not db_room:
+                    db_room = marshal(message.room, room_model)
+                    db_room.pop("id", None)
+                    db_members = db_room.pop("members", [])
 
+                    new_room = Room(**db_room)
+                    for member in db_members:
+                        contact = Contact.query.filter_by(address=member["address"]).first()
+                        if not contact:
+                            member.pop("name", None)
+                            member.pop("id", None)
+
+                            contact = Contact(**member)
+                            contact_room = contact.save()
+                            self.socketio.emit('newContact', marshal(contact_room, room_model), namespace="/api/internal")
+
+                        new_room.members.append(contact)
+
+                    new_room.save()
+                    self.socketio.emit('newContact', marshal(new_room, room_model), namespace="/api/internal")
+            message.room = None
             message.save()
 
             self.socketio.emit('newMessage', marshal(message, message_model), namespace="/api/internal")

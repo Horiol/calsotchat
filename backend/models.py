@@ -5,7 +5,7 @@ from backend.db import db
 
 rooms_contacts_association = db.Table('rooms_contacts_association',
     db.Column('room_id', db.Integer, db.ForeignKey('room.id'), primary_key=True),
-    db.Column('contact_address', db.String, db.ForeignKey('contact.address'), primary_key=True)
+    db.Column('contact_address', db.String, db.ForeignKey('contact.address'), primary_key=True) # TODO: change foreignkey to id?
 )
 
 class Room(db.Model):

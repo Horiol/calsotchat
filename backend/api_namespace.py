@@ -11,7 +11,7 @@ from flask_cors import CORS
 
 from backend.models import Message, Contact, Room, MessageStatus
 from backend.db import db
-from backend.utils import create_room_to_member
+from backend.utils import create_room_to_member, remove_room_to_member
 
 class NullableString(fields.String):
     __schema_type__ = ['string', 'null']
@@ -49,7 +49,7 @@ message_model = api.model('Message', {
     'status': fields.String(attribute=lambda x: str(MessageStatus(x.status).name), readonly=True),
     'timestamp': fields.DateTime(readonly=True),
     'sender': fields.Nested(contact_model, readonly=True),
-    # 'room': fields.Nested(room_model, readonly=True),
+    'room': fields.Nested(room_model, readonly=True),
 })
 
 @api.route(f'/myself/')
@@ -220,6 +220,7 @@ class RoomMessagesResource(Resource):
 
 @api.route(f'/{rooms_ns}/<string:hash>/members/')
 class RoomMembersResource(Resource):
+    # TODO: apply changes to all members of the group
     @api.marshal_with(room_model)
     def post(self, hash):
         room = Room.query.filter_by(hash=hash).first()
@@ -246,9 +247,11 @@ class RoomMembersResource(Resource):
         if room.admin_address != g.origin:
             raise BadRequest("You are not the room owner")
 
+        room_json = marshal(room, room_model)
         for user in api.payload['members']:
             user_object = Contact.query.get(user)
             if user_object.address != g.origin:
+                remove_room_to_member(g.onion_session, user_object, room_json)
                 room.members.remove(user_object)
         room.save()
 
