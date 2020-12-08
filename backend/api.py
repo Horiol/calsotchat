@@ -113,6 +113,7 @@ class MainApi():
             content.pop('id', None)
             content.pop('sender', None)
             content.pop('timestamp', None)
+            room = content.pop('room', None)
 
             sender = Contact.query.filter_by(address=content['sender_address']).first()
             if not sender:
@@ -130,21 +131,25 @@ class MainApi():
 
             message = Message(**content)
             message.status = MessageStatus.RECEIVED
-            logging.info(message)
-            logging.info(content)
 
             if message.room_hash == self.origin: # Direct message to me -> overwrite the room_hash
                 message.room_hash = content['sender_address']
+                room["hash"] = content['sender_address']
+                room["name"] = content['sender_nickname']
             
-            if not message.room["private"]:
-                # Check if room exist, create new room if not
-                db_room = Room.query.filter_by(hash=message.room["hash"]).first()
-                if not db_room:
-                    db_room = marshal(message.room, room_model)
-                    db_room.pop("id", None)
-                    db_members = db_room.pop("members", [])
+            # Check if room exist, create new room if not
+            if not room["private"]:
+                db_room = Room.query.filter_by(hash=room["hash"]).first()
+            else:
+                db_room = Room.query.filter_by(hash=content['sender_address']).first()
 
-                    new_room = Room(**db_room)
+            if not db_room:
+                db_room = marshal(room, room_model)
+                db_room.pop("id", None)
+                db_members = db_room.pop("members", [])
+
+                new_room = Room(**db_room)
+                if not room["private"]:
                     for member in db_members:
                         contact = Contact.query.filter_by(address=member["address"]).first()
                         if not contact:
@@ -156,10 +161,11 @@ class MainApi():
                             self.socketio.emit('newContact', marshal(contact_room, room_model), namespace="/api/internal")
 
                         new_room.members.append(contact)
+                else:
+                    new_room.members.append(sender)
 
-                    new_room.save()
-                    self.socketio.emit('newContact', marshal(new_room, room_model), namespace="/api/internal")
-            message.room = None
+                new_room.save()
+                self.socketio.emit('newContact', marshal(new_room, room_model), namespace="/api/internal")
             message.save()
 
             self.socketio.emit('newMessage', marshal(message, message_model), namespace="/api/internal")

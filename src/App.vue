@@ -15,6 +15,7 @@
             :room="selected_contact"
             :contacts="contacts"
             @update-room="updateRoom"
+            @remove-contact="removeContact"
           />
         </vs-col>
       </vs-row>
@@ -79,6 +80,13 @@ export default {
     this.mainLoad()
   },
   methods:{
+    removeContact: function(data) {
+      this.contacts = this.contacts.filter(contact => contact.hash != data.hash)
+
+      if (this.selected_contact.hash == data.hash) {
+        this.selected_contact = this.contacts[0]
+      }
+    },
     updateRoom: function(data){
       for (let index = 0; index < this.contacts.length; index++) {
         const room = this.contacts[index];

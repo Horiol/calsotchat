@@ -17,6 +17,10 @@ class Room(db.Model):
     admin_address = db.Column(db.String, nullable=True)
 
     members = db.relationship("Contact", secondary=rooms_contacts_association)
+    messages = db.relationship(
+        "Message", back_populates="room",
+        cascade="all, delete"
+    )
 
     def save(self):
         if not self.id:
@@ -88,7 +92,8 @@ class Message(db.Model):
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
     sender = db.relationship("Contact")
-    room = db.relationship("Room")
+    # room = db.relationship("Room")
+    room = db.relationship("Room", back_populates="messages")
 
     def save(self):
         if not self.id:

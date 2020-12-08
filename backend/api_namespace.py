@@ -166,7 +166,10 @@ class RoomResource(Resource):
                 member.pop("id", None)
 
                 contact = Contact(**member)
-                contact.save()
+                contact_room = contact.save()
+
+                # Emit new contact event
+                g.socketio.emit('newContact', marshal(contact_room, room_model), namespace="/api/internal")
 
             room.members.append(contact)
         room.save()
@@ -177,7 +180,7 @@ class RoomResource(Resource):
             for member in room.members:
                 if member.address != g.origin:
                     create_room_to_member(g.onion_session, member, room_json)
-        g.socketio.emit('newRoom', room_json, namespace="/api/internal")
+        g.socketio.emit('newContact', room_json, namespace="/api/internal")
         return room
 
 @api.route(f'/{rooms_ns}/<string:hash>/')
@@ -194,6 +197,7 @@ class RoomInstanceResource(Resource):
         room = Room.query.filter_by(hash=hash).first()
         if room:
             room.delete()
+            # TODO: emit event to delete group in frontend
         return '', 204
     
     @api.expect(room_model, validate=True)

@@ -18,6 +18,15 @@
           >
             <i class='bx bxs-pencil' ></i>
           </vs-button>
+          <vs-button 
+            v-if="canEdit"
+            style="display:inline"
+            icon
+            danger
+            @click="active2=!active2"
+          >
+            <i class='bx bxs-trash' ></i>
+          </vs-button>
         </h2>
       </vs-row>
       <vs-row justify="center" align="center">
@@ -83,6 +92,32 @@
           </div>
       </template>
     </vs-dialog>
+
+    <vs-dialog v-model="active2">
+      <template #header>
+        <h4>
+          Delete Contact/Group
+        </h4>
+      </template>
+
+
+      <div>
+        <p>
+          Are you sure?
+        </p>
+      </div>
+
+      <template #footer>
+        <div class="con-footer">
+          <vs-button @click="deleteContact()" danger>
+            Yes, delete it!
+          </vs-button>
+          <vs-button @click="active2=false" dark>
+            Cancel
+          </vs-button>
+        </div>
+      </template>
+    </vs-dialog>
   </div>
 </template>
 
@@ -100,6 +135,7 @@ export default {
   },
   data:() => ({
     active:false,
+    active2:false,
     new_name:'',
     new_members: [],
     msg:'',
@@ -112,6 +148,15 @@ export default {
     }
   },
   methods: {
+    deleteContact: function(){
+      this.axios
+        .delete('/rooms/' + this.room.hash + "/")
+        .then((response) => {
+          this.active2 = false;
+          console.log(response)
+          this.$emit('remove-contact', this.room)
+        })
+    },
     contactName: function(contact){
         if (contact.name != null){
             return contact.name
@@ -262,5 +307,10 @@ export default {
   overflow-y: auto;
   overflow-x:hidden;
   max-height: calc(75vh - 50px);
+}
+.con-footer{
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
 }
 </style>

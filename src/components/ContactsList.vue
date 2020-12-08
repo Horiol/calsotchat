@@ -223,7 +223,8 @@ export default {
             this.axios
             .post('/rooms/', this.new_group)
             .then(response => {
-                this.$emit('new-contact', response.data)
+                console.log(response)
+                // this.$emit('new-contact', response.data)
                 this.loading_dialog = false
                 this.new_group_dialog = false
             })
