@@ -91,7 +91,7 @@ To be able to launch 2 instance of the app in the same machine we have to add so
 
 for example, to launch the second instance we will do the following in a cmd terminal:
 ```
-./CalsotChat-0.2.0.AppImage --port=5010 --onion_port=8080 --folder=~/calsotchat2
+./CalsotChat-1.0.0.AppImage --port=5010 --onion_port=8080 --folder=~/calsotchat2
 ```
 
 ## TODO List
