@@ -35,10 +35,10 @@
             </vs-sidebar-item>
 
             <template #footer>
-                <vs-button @click="new_contact_dialog=!new_contact_dialog">
+                <vs-button @click="new_contact_dialog=true">
                     <i class='bx bxs-user-plus' ></i> Add Contact
                 </vs-button>
-                <vs-button @click="new_group_dialog=!new_group_dialog">
+                <vs-button @click="new_group_dialog=true">
                     <i class='bx bxs-group' ></i> New group
                 </vs-button>
             </template>
@@ -208,8 +208,8 @@ export default {
                 .then(response => {
                     this.axios
                     .get('/rooms/' + response.data.address + "/")
-                    .then(response => {
-                        this.$emit('new-contact', response.data)
+                    .then(_response => {
+                        // this.$emit('new-contact', response.data)
                         this.loading_dialog = false
                         this.new_contact_dialog = false 
                     })

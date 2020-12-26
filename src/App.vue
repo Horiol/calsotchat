@@ -1,6 +1,6 @@
 <template>
   <div id="app">
-    <nav-bar :own_route="myself.address" />
+    <nav-bar :own_route="myself.address" :ca_api_token="ca_api_token" @new-api-token="updateToken"/>
     <contacts-list 
       :myself="myself"
       v-on:input="userSelected" 
@@ -70,6 +70,7 @@ export default {
       address:null,
       nickname:null
     },
+    ca_api_token: null,
     new_nickname:"",
     selected_contact:null,
     contacts: [],
@@ -80,6 +81,9 @@ export default {
     this.mainLoad()
   },
   methods:{
+    updateToken: function(token) {
+      this.ca_api_token = token
+    },
     removeContact: function(data) {
       this.contacts = this.contacts.filter(contact => contact.hash != data.hash)
 
@@ -106,13 +110,15 @@ export default {
           .get('/rooms/')
       ])
       .then(this.axios.spread((first_response, second_response) => {
-        this.myself = first_response.data
+        this.myself = first_response.data['contact']
+        this.ca_api_token = first_response.data['api_token']
         this.notHaveNickname = (this.myself.nickname == "")
 
         this.contacts = second_response.data
         this.loading.close()
       }))
-      .catch(_error => {
+      .catch(error => {
+        console.log(error);
         var th = this
         setTimeout(
           function() {th.mainLoad()},

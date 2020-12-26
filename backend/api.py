@@ -14,7 +14,7 @@ from flask_restx import Api, marshal
 
 from backend.db import db
 from backend.api_namespace import api as namespace_api, message_model, contact_model, room_model
-from backend.models import Message, Contact, Room, MessageStatus, MessageQueue
+from backend.models import Message, Contact, Room, MessageStatus, MessageQueue, Myself
 from backend.monitor import MonitorService
 
 logging.basicConfig(
@@ -44,15 +44,19 @@ def create_app(address, **kwargs):
         db.create_all()
         
         # Check if current user is created in db, otherwise create it
-        myself = Contact.query.filter_by(address=address).first()
-        if not myself:
-            myself = Contact(
+        my_contact = Contact.query.filter_by(address=address).first()
+        if not my_contact:
+            my_contact = Contact(
                 nickname="",
                 address=address,
                 online=True
             )
-            myself.save()
+            my_contact.save()
             logging.info("Local user created")
+            myself = Myself(
+                address=address,
+            )
+            myself.save()
 
         return app
 
@@ -189,7 +193,10 @@ class MainApi():
             some_failed = False
 
             message_json = marshal(message, message_model)
+            logging.info(message_json)
+            logging.info(receivers)
             for receiver in receivers: # TODO: review and make it more asyncronous
+                logging.info(receiver.__dict__)
                 if receiver.address != self.origin:
                     try:
                         result = self.onion_session.post(

@@ -140,3 +140,21 @@ class MessageQueue(db.Model):
         if len(queued_messages) == 0:
             message = Message.query.get(self.msg_id)
             message.update(status=MessageStatus.DISPATCHED)
+
+class Myself(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    address = db.Column(db.String, nullable=False)
+    email = db.Column(db.String, nullable=True)
+
+    def save(self):
+        if not self.id:
+            db.session.add(self)
+        db.session.commit()
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()
+    def update(self, **kwargs):
+        for key, value in kwargs.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
+        self.save()

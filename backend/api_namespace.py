@@ -1,6 +1,7 @@
 import logging
 import string
 import secrets
+import json
 
 from flask import g
 from flask_restx import Resource, fields, Namespace, marshal
@@ -9,9 +10,11 @@ from werkzeug.exceptions import BadRequest, InternalServerError, NotFound, Confl
 
 from flask_cors import CORS
 
-from backend.models import Message, Contact, Room, MessageStatus
+from backend.models import Message, Contact, Myself, Room, MessageStatus
 from backend.db import db
 from backend.utils import create_room_to_member, remove_room_to_member
+
+CA_ROUTE = "http://qqjoe6z7ggiaq6psru5zbieohwurmkyvb6lzy3qvf3fd7bmytikh2fqd.onion"
 
 class NullableString(fields.String):
     __schema_type__ = ['string', 'null']
@@ -52,11 +55,118 @@ message_model = api.model('Message', {
     'room': fields.Nested(room_model, readonly=True),
 })
 
-@api.route(f'/myself/')
+myself_model = api.model('Myself', {
+    'id': fields.Integer(readonly=True),
+    'address': fields.String(readonly=True),
+    'email': fields.String(required=True),
+})
+
+def create_contact(json_data):
+    contact = Contact.query.filter_by(address=json_data['address']).first()
+    if contact:
+        # Check if room exist or was deleted
+        contact_room = Room.query.filter_by(hash=json_data['address']).first()
+        if contact_room:
+            raise Conflict("Contact address already in DB")
+        
+        contact_room = Room(
+            name=contact.name or contact.nickname,
+            hash=contact.address,
+            private=True
+        )
+        contact_room.save()
+        contact_room.members.append(contact)
+        contact_room.save()
+
+    else:
+        contact = Contact(**json_data)
+        contact_room = contact.save()
+        logging.info(f"Contact {contact.name} created")
+
+    g.socketio.emit('newContact', marshal(contact_room, room_model), namespace="/api/internal")
+
+    return contact
+
+@api.route('/find_contact/')
+class FindResource(Resource):
+    def post(self):
+        payload = {
+            "email": api.payload['email'],
+        }
+        result = g.onion_session.post(
+            f"{CA_ROUTE}/find_contact/",
+            data=json.dumps(payload),
+            headers={
+                'Content-Type': 'application/json',
+                'Api-Token': api.payload['api_token']
+            }
+        )
+        if result.status_code == 200:
+            data = result.json()
+            data['address'] = data.pop('onion_address')
+
+            contact = create_contact(data)
+            
+            return marshal(contact, contact_model)
+        else:
+            return result.json(), result.status_code
+
+@api.route('/myself/')
 class MyselfResource(Resource):
-    @api.marshal_with(contact_model)
+    # @api.marshal_with(contact_model)
     def get(self):
-        return Contact.query.filter_by(address=g.origin).first()
+        myself = marshal(Myself.query.filter_by(address=g.origin).first(), myself_model)
+        contact = marshal(Contact.query.filter_by(address=g.origin).first(), contact_model)
+        api_token = None
+
+        # Get info from CA if email in myself table
+        if myself['email']:
+            payload = {
+                "email": myself['email'],
+                "nickname": contact['nickname'],
+                "onion_address": g.origin
+            }
+            result = g.onion_session.post(
+                f"{CA_ROUTE}/contacts/",
+                data=json.dumps(payload),
+                headers={
+                    'Content-Type': 'application/json'
+                }
+            )
+            api_token = result.json()['api_token']
+
+        return {
+            'contact': contact,
+            'api_token': api_token
+        }
+    
+    @api.expect(myself_model, validate=True)
+    def put(self):
+        contact = marshal(Contact.query.filter_by(address=g.origin).first(), contact_model)
+        api_token = None
+        
+        myself = Myself.query.filter_by(address=g.origin).first()
+        myself.update(**api.payload)
+
+        if myself.email:
+            payload = {
+                "email": myself.email,
+                "nickname": contact['nickname'],
+                "onion_address": g.origin
+            }
+            result = g.onion_session.post(
+                "http://qqjoe6z7ggiaq6psru5zbieohwurmkyvb6lzy3qvf3fd7bmytikh2fqd.onion/contacts/",
+                data=json.dumps(payload),
+                headers={
+                    'Content-Type': 'application/json'
+                }
+            )
+            api_token = result.json()['api_token']
+
+        return {
+            'contact': contact,
+            'api_token': api_token
+        }
 
 @api.route(f'/{contacts_ns}/')
 class ContactResource(Resource):
@@ -67,13 +177,7 @@ class ContactResource(Resource):
     @api.expect(contact_model, validate=True)
     @api.marshal_with(contact_model, code=201)
     def post(self):
-        contact = Contact.query.filter_by(address=api.payload['address']).first()
-        if contact:
-            raise Conflict("Contact address already in DB")
-
-        contact = Contact(**api.payload)
-        contact.save()
-        logging.info(f"Contact {contact.name} created")
+        contact = create_contact(api.payload)
 
         return contact
 
@@ -99,8 +203,6 @@ class ContactInstanceResource(Resource):
 
         contact.update(**api.payload)
         return contact
-
-
 
 
 @api.route(f'/{messages_ns}/')
@@ -260,3 +362,4 @@ class RoomMembersResource(Resource):
         room.save()
 
         return room
+
