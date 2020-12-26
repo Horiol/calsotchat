@@ -32,6 +32,9 @@
                 <span v-if="contact.hash == myself.address">
                     (You)
                 </span>
+                <vs-button v-if="has_new_messages(contact.hash)" circle success transparent :active="true" icon style="display:inline">
+                    <i class='bx bxs-message-detail' ></i>
+                </vs-button>
             </vs-sidebar-item>
 
             <template #footer>
@@ -120,6 +123,7 @@ export default {
     },
     data:() => ({
         new_contact_dialog:false,
+        new_messages_rooms: [],
         active:null,
         loading_dialog: false,
         new_contact:{
@@ -182,6 +186,9 @@ export default {
         }
     },
     methods:{
+        has_new_messages: function(room_hash) {
+            return this.new_messages_rooms.indexOf(room_hash) >= 0
+        },
         contactName: function(contact){
             if (contact.name != null){
                 return contact.name
@@ -234,6 +241,17 @@ export default {
                 return element.hash == room_hash
             })[0]
             this.$emit('input', room)
+
+            if (this.new_messages_rooms.indexOf(room_hash) >= 0){
+                this.new_messages_rooms.splice(this.new_messages_rooms.indexOf(room_hash), 1)
+            }
+        }
+    },
+    sockets: {
+        newMessage: function (data) {
+            if (this.active !== data.room_hash){
+                this.new_messages_rooms.push(data.room_hash)
+            }
         }
     }
 }
