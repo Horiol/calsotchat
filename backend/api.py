@@ -105,7 +105,7 @@ class MainApi():
             self.running = False
             self.socketio.stop()
             return ""
-        
+
         @self.app.route("/healthz/")
         def healthz():
             return {"status":"ok"}
@@ -140,12 +140,13 @@ class MainApi():
                 message.room_hash = content['sender_address']
                 room["hash"] = content['sender_address']
                 room["name"] = content['sender_nickname']
-            
+
             # Check if room exist, create new room if not
-            if not room["private"]:
-                db_room = Room.query.filter_by(hash=room["hash"]).first()
-            else:
-                db_room = Room.query.filter_by(hash=content['sender_address']).first()
+            db_room = (
+                Room.query.filter_by(hash=content['sender_address']).first()
+                if room["private"]
+                else Room.query.filter_by(hash=room["hash"]).first()
+            )
 
             if not db_room:
                 db_room = marshal(room, room_model)

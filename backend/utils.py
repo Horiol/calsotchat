@@ -17,7 +17,6 @@ def create_room_to_member(onion_session, member, room_json):
         logging.info(response.content)
     except Exception as e:
         logging.exception(e)
-        pass # TODO: save member and room to retry
         
 def remove_room_to_member(onion_session, member, room_json):
     try:
@@ -27,4 +26,3 @@ def remove_room_to_member(onion_session, member, room_json):
         logging.info(response.content)
     except Exception as e:
         logging.exception(e)
-        pass # TODO: save member and room to retry

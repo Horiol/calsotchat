@@ -44,13 +44,15 @@ class Tor():
                     {onion_port: port}, 
                     await_publication = True
                 )
-                logging.info("Started a new hidden service with the address of %s.onion" % self.service.service_id)
+                logging.info(
+                    f"Started a new hidden service with the address of {self.service.service_id}.onion"
+                )
+
 
                 with open(key_path, 'w') as key_file:
-                    key_file.write('%s:%s' % (self.service.private_key_type, self.service.private_key))
-            
-            
-            ### If file already exist use it to resume the same onion address
+                    key_file.write(f'{self.service.private_key_type}:{self.service.private_key}')
+                            
+
             else:
                 with open(key_path) as key_file:
                     key_type, key_content = key_file.read().split(':', 1)
@@ -61,13 +63,13 @@ class Tor():
                     key_content = key_content, 
                     await_publication = True
                 )
-                logging.info("Resumed %s.onion" % self.service.service_id)
+                logging.info(f"Resumed {self.service.service_id}.onion")
 
-            
+
         # return onion route
-        route = self.service.service_id + ".onion"
+        route = f"{self.service.service_id}.onion"
         if onion_port != 80:
-            route += ":" + str(onion_port)
+            route += f":{str(onion_port)}"
         return route
 
     def stop_service(self):
