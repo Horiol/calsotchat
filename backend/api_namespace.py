@@ -101,15 +101,14 @@ class FindResource(Resource):
                 'Api-Token': api.payload['api_token']
             }
         )
-        if result.status_code == 200:
-            data = result.json()
-            data['address'] = data.pop('onion_address')
-
-            contact = create_contact(data)
-            
-            return marshal(contact, contact_model)
-        else:
+        if result.status_code != 200:
             return result.json(), result.status_code
+        data = result.json()
+        data['address'] = data.pop('onion_address')
+
+        contact = create_contact(data)
+
+        return marshal(contact, contact_model)
 
 @api.route('/myself/')
 class MyselfResource(Resource):
@@ -144,7 +143,7 @@ class MyselfResource(Resource):
     def put(self):
         contact = marshal(Contact.query.filter_by(address=g.origin).first(), contact_model)
         api_token = None
-        
+
         myself = Myself.query.filter_by(address=g.origin).first()
         myself.update(**api.payload)
 
@@ -177,9 +176,7 @@ class ContactResource(Resource):
     @api.expect(contact_model, validate=True)
     @api.marshal_with(contact_model, code=201)
     def post(self):
-        contact = create_contact(api.payload)
-
-        return contact
+        return create_contact(api.payload)
 
 @api.route(f'/{contacts_ns}/<string:address>/')
 class ContactInstanceResource(Resource):
@@ -189,8 +186,7 @@ class ContactInstanceResource(Resource):
 
     @api.response(204, 'Item deleted')
     def delete(self, address):
-        contact = Contact.query.filter_by(address=address).first()
-        if contact:
+        if contact := Contact.query.filter_by(address=address).first():
             contact.delete()
         return '', 204
 
@@ -219,8 +215,7 @@ class MessageInstanceResource(Resource):
 
     @api.response(204, 'Item deleted')
     def delete(self, id):
-        message = Message.query.get(id)
-        if message:
+        if message := Message.query.get(id):
             message.delete()
         return '', 204
 
@@ -244,7 +239,7 @@ class RoomResource(Resource):
 
             is_not_unique = True
             while is_not_unique:
-                salt = ''.join(secrets.choice(alphabet) for i in range(12))
+                salt = ''.join(secrets.choice(alphabet) for _ in range(12))
 
                 api.payload["hash"] = f"{salt}_{g.origin}"
                 room = Room.query.filter_by(hash=api.payload["hash"]).first()
@@ -253,7 +248,7 @@ class RoomResource(Resource):
 
             api.payload["admin_address"] = g.origin
             is_mine = True
-        
+
         members = api.payload.pop("members", [])
 
         room = Room(**api.payload)
@@ -289,17 +284,15 @@ class RoomResource(Resource):
 class RoomInstanceResource(Resource):
     @api.marshal_with(room_model)
     def get(self, hash):
-        room = Room.query.filter_by(hash=hash).first()
-        if not room:
+        if room := Room.query.filter_by(hash=hash).first():
+            return room
+        else:
             raise NotFound()
-        return room
 
     @api.response(204, 'Item deleted')
     def delete(self, hash):
-        room = Room.query.filter_by(hash=hash).first()
-        if room:
+        if room := Room.query.filter_by(hash=hash).first():
             room.delete()
-            # TODO: emit event to delete group in frontend
         return '', 204
     
     @api.expect(room_model, validate=True)
